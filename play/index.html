@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hidden Treasure Quest — Free Demo</title>
+<title>Hidden Treasure Quest — Free Demo</title><link rel="manifest" href="../manifest.webmanifest" data-sw="../sw.js"><meta name="theme-color" content="#1d1830">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
@@ -6191,6 +6191,105 @@ function audioWake(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioCo
  if(settings.music&&MU.song){if(!MU.next||MU.next<AC.currentTime)MU.next=AC.currentTime+.1;if(!MU.timer)MU.timer=setInterval(musicTick,40);}}catch(e){}}
 document.addEventListener('pointerdown',audioWake);document.addEventListener('keydown',audioWake);
 
+// ===================== V34: BALANCE TUNING (slower leveling, wrong answers hurt more) =====================
+const XP_RATE=0.4,DANGER=1.6;
+{const _gxB=gainXP;gainXP=function(n){return _gxB(Math.max(1,Math.round((+n||0)*XP_RATE)));};}
+{const _edB=enemyDmg;enemyDmg=function(e){return Math.max(1,Math.round(_edB(e)*DANGER));};}
+
+// ===================== V34: FIRST-TIME TUTORIAL =====================
+const TUT=[
+ {when:()=>screen==='camp',t:n=>`👋 Welcome, <b>${esc(n)}</b>! Tap <b>🌍 Explore the Overworld</b>, or pick <b>Dungeon 1</b> in the list, to start your quest.`},
+ {when:()=>screen==='game'&&!combatOpen,t:()=>`🕹️ Move with the <b>arrow keys</b> or <b>W A S D</b>${('ontouchstart' in window||navigator.maxTouchPoints>0)?' (or the on-screen arrows)':''}. Walk into a monster to battle it!`},
+ {when:()=>combatOpen&&Cb&&!Cb.locked,t:()=>`🧠 Read the question and click the right answer. ✔ Right answers hit the monster. ✘ Wrong answers let it hit you. Tap <b>🔊 Read</b> to hear the question.`},
+ {when:()=>combatOpen,t:()=>`⚔️ Keep answering until the monster is defeated. Answering wrong <i>too fast</i> costs gold, so read carefully!`},
+ {when:()=>!combatOpen&&screen==='game',t:()=>`👑 Each dungeon ends with a <b>boss</b>. Beat it to win a piece of the treasure map! You can go back to camp any time to heal.`},
+ {when:()=>screen==='camp',t:()=>`🏕️ Camp is home base. Your hero heals here, and the tabs hold your gear, pets, games, and learning tools. Have fun!`,last:true}];
+function tutStep(){if(!hero||PARTY||typeof SHOWCASE!=='undefined'&&SHOWCASE)return -1;return typeof hero.tut==='number'?hero.tut:-1;}
+function tutDone(){if(!hero)return;hero.tut=-1;saveHero();tutPaint();}
+function tutPaint(){let b=document.getElementById('tutBox');const s=tutStep();
+ const vis=s>=0&&s<TUT.length&&!modalOpen&&!cutOpen&&TUT[s].when();
+ if(!vis){if(b)b.style.display='none';return;}
+ if(!b){b=document.createElement('div');b.id='tutBox';document.body.appendChild(b);}
+ const st=TUT[s];const html=`<div class="tutT">${st.t(hero.name)}</div><div class="tutR"><span class="mini">Tip ${s+1} of ${TUT.length}</span>${st.last?'<button class="btn sm gold" id="tutOk">Got it!</button>':''}<button class="btn sm" id="tutSkip">${st.last?'Close':'Skip tutorial'}</button></div>`;
+ if(b.dataset.s!==String(s)){b.dataset.s=String(s);b.innerHTML=html;const ok=document.getElementById('tutOk');if(ok)ok.onclick=tutDone;document.getElementById('tutSkip').onclick=tutDone;}
+ b.classList.toggle('top',typeof TOUCHY!=='undefined'&&TOUCHY);b.style.display='block';}
+function tutTick(){const s=tutStep();if(s<0)return tutPaint();
+ if(s===0&&screen==='game'){hero.tut=combatOpen?2:1;saveHero();}
+ else if(s===1&&combatOpen){hero.tut=2;saveHero();}
+ else if(s===2&&combatOpen&&Cb&&Cb.locked){hero.tut=3;saveHero();}
+ else if(s===3&&!combatOpen){hero.tut=4;saveHero();}
+ else if(s===4&&screen==='camp'){hero.tut=5;saveHero();}
+ else if((s===2||s===3)&&screen==='camp'){hero.tut=5;saveHero();}
+ tutPaint();}
+setInterval(tutTick,400);
+{const _nhT=newHero;newHero=function(n,c){const r=_nhT.apply(this,arguments);try{if(hero)hero.tut=0;}catch(e){}return r;};}
+{const st=document.createElement('style');st.textContent=`#tutBox{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:9000;width:min(560px,calc(100vw - 32px));background:#1d1830f2;border:2px solid #ffcf4a;border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px #000a;display:none}
+#tutBox.top{bottom:auto;top:12px}#tutBox .tutT{font-size:15px;line-height:1.45}#tutBox .tutR{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:8px}#tutBox .tutR .mini{margin-right:auto}`;document.head.appendChild(st);}
+
+// ===================== V34: touch screens already get the built-in .pad arrows; just detect touch for tutorial text
+const TOUCHY=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+
+// ===================== V34: 🏁 REVIEW RUSH (boss rush on chosen standards, e.g. before a 9-weeks test) =====================
+const rushCode=r=>'MWR1:'+enc64(r);
+function readRushCode(v){v=(v||'').trim();if(!v.startsWith('MWR1:'))throw new Error('Review Rush codes start with MWR1:');const r=dec64(v.slice(5));if(!r.i||!r.k||!r.k.length)throw new Error('That Review Rush code is incomplete.');return r;}
+function rushPool(r){const hid=hiddenQ();return ALLQ().filter(q=>r.k.includes(stdOfQ(q))&&!hid.has(q.id)&&!q.hard);}
+function stdGroups(){const g={};Object.keys(Object.assign({},STD_DEFAULT,settings.stdMap||{})).forEach(k=>{const[sg,t]=k.split('|');const gr=sg.slice(2),s=sg[0];
+  const name=gr==='EE5'?'OAAP Science — Grade 5 EE':gr==='3'||gr==='4'?'OAAP Science — Grade '+gr:(s==='h'?'History & Geography — ':s==='e'?'ELA — ':s==='m'?'Math — ':'Science — ')+(gr==='78'?'7th/8th':gr+'th');
+  const code=stdOf(k);if(!code)return;const G=g[name]=g[name]||{};(G[code]=G[code]||[]).push(t);});return g;}
+let RUSH=null,rushGroup='';
+function startRush(r){const pool=rushPool(r);if(pool.length<4){openModal(`<h2 class="px">🏁 Review Rush</h2><p class="bad">This Review Rush doesn't have enough questions in this version of the game.</p><div class="row"><button class="btn" onclick="closeModal()">OK</button></div>`);return;}
+ if(PARTY){openModal('<h2 class="px">🏁 Review Rush</h2><p>Review Rush is for one player at a time.</p><div class="row"><button class="btn" onclick="closeModal()">OK</button></div>');return;}
+ const n=Math.max(1,Math.min(7,+r.b||5)),d=Math.max(1,Math.min(20,hero.unlocked||1));
+ RUSH={r,n,d,i:0,res:{},right:0,tot:0,deck:shuffle(pool.slice()),cur:null,startedAt:Date.now(),over:false};
+ closeModal();enterDungeon(d);try{cutClose()}catch(e){}try{closeModal()}catch(e){}
+ msg(`🏁 Review Rush: <b>${esc(r.n)}</b> — defeat ${n} bosses in a row!`,'#ffcf4a');setTimeout(rushNext,600);}
+function rushNext(){if(!RUSH||RUSH.over)return;if(RUSH.i>=RUSH.n)return rushEnd(true);
+ const bd=DUNGEONS[(RUSH.i*3+RUSH.d-1)%20];const e=mkEnemy(bd[2],RUSH.d,P.x,P.y,{name:bd[1],pal:Object.keys(bd[4]).length?bd[4]:null,taunt:bd[3]});
+ e.boss=false;e.rush=true;e.maxHp=Math.max(10,Math.round(e.maxHp*.45));e.hp=e.maxHp;e.xp=Math.round(e.xp*.4);e.name=`🏁 ${RUSH.i+1}/${RUSH.n} · ${bd[1]}`;
+ RUSH.cur=e;RUSH.i++;startCombat(e);}
+function rushEnd(won){if(!RUSH||RUSH.over)return;RUSH.over=true;const R=RUSH,pct=R.tot?Math.round(R.right/R.tot*100):0;
+ const beat=won?R.n:Math.max(0,R.i-1),g=beat*(20+R.d*5)+(won?50+R.d*10:0);hero.gold+=g;
+ hero.rushes=hero.rushes||{};const prev=hero.rushes[R.r.i];hero.rushes[R.r.i]={n:R.r.n,pct:Math.max(pct,prev?prev.pct:0),last:pct,won:won||(prev&&prev.won),at:Date.now()};saveHero();
+ const rows=Object.entries(R.res).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]).map(([c,[r,t]])=>{const p=Math.round(r/t*100);return`<div class="item" style="display:flex;gap:10px;align-items:center"><b style="min-width:120px">${esc(c)}</b><div style="flex:1;background:#0006;border-radius:6px;height:10px;overflow:hidden"><div style="width:${p}%;height:100%;background:${p>=80?'#5fd36f':p>=60?'#ffcf4a':'#ff6b6b'}"></div></div><span class="mini">${r}/${t} · ${p}%</span></div>`;}).join('');
+ setTimeout(()=>{if(combatOpen){combatOpen=false;$('#combat').classList.remove('on');Cb=null;}RUSH=null;goCamp(true);
+  openModal(`<h2 class="px gold">${won?'🏆 Review Rush Complete!':'🏁 Review Rush Over'}</h2><p><b>${esc(R.r.n)}</b> — you beat <b>${beat} of ${R.n}</b> bosses and answered <b>${R.right} of ${R.tot}</b> right (<b>${pct}%</b>). +${g} gold</p>
+  <h3>By standard</h3>${rows||'<p class="mini">No answers recorded.</p>'}<p class="mini">Standards in red or yellow are the ones to review before the test. Your best score: ${hero.rushes[R.r.i].pct}%.</p>
+  <div class="row"><button class="btn gold" id="ruAgain">🔁 Try again</button><button class="btn" id="ruX">Close</button></div>`);
+  $('#ruAgain').onclick=()=>startRush(R.r);$('#ruX').onclick=closeModal;},won?1200:300);}
+{const _dqR=drawQ;drawQ=function(boss){if(RUSH&&!RUSH.over&&combatOpen&&Cb&&Cb.e&&Cb.e.rush){if(!RUSH.deck.length)RUSH.deck=shuffle(rushPool(RUSH.r));let q=RUSH.deck.pop();if(Cb.q&&q===Cb.q&&RUSH.deck.length)q=RUSH.deck.pop();lastQ=q;return{q,tag:'🏁 '+RUSH.r.n};}return _dqR(boss);};}
+{const _anR=answer;answer=function(i){const live=RUSH&&!RUSH.over&&Cb&&Cb.e&&Cb.e.rush&&!Cb.locked&&Cb.q;let ok=false,code='';if(live){ok=Cb.order[i]===0;code=stdOfQ(Cb.q)||'Other';}
+ _anR.apply(this,arguments);if(live&&Cb&&Cb.locked){const x=RUSH.res[code]=RUSH.res[code]||[0,0];x[1]++;RUSH.tot++;if(ok){x[0]++;RUSH.right++;}}};}
+setInterval(()=>{if(!RUSH||RUSH.over)return;if(screen==='camp'){rushEnd(false);return;}
+ if(!combatOpen&&RUSH.cur&&RUSH.cur.hp<=0&&!modalOpen){RUSH.cur=null;setTimeout(rushNext,500);}},400);
+function openRushStudent(){const done=Object.entries(hero.rushes||{});
+ openModal(`<h2 class="px gold">🏁 Review Rush</h2><p>Your teacher gives you a <b>Review Rush code</b> (it starts with <code>MWR1:</code>). Paste it here to fight a row of bosses using only the standards you're reviewing.</p>
+ <input type="text" id="ruIn" placeholder="Paste a Review Rush code" style="width:100%"><div id="ruErr" class="mini" style="min-height:18px;color:#ff8a8a;font-weight:800"></div>
+ <div class="row"><button class="btn gold" id="ruGo">🏁 Start</button><button class="btn" id="ruX">Close</button></div>
+ ${done.length?'<h3>My results</h3>'+done.map(([i,x])=>`<div class="item"><div class="iinfo"><b>${esc(x.n)}</b><div class="mini">Best ${x.pct}% · last ${x.last}%${x.won?' · 🏆 cleared':''}</div></div></div>`).join(''):''}`);
+ $('#ruX').onclick=closeModal;$('#ruGo').onclick=()=>{try{startRush(readRushCode($('#ruIn').value));}catch(e){$('#ruErr').textContent=e.message;}};}
+{const _rcR=renderCamp;renderCamp=function(){_rcR.apply(this,arguments);try{const ref=document.getElementById('bHard')||document.getElementById('bRepair');if(ref&&!document.getElementById('bRush')){ref.insertAdjacentHTML('afterend','<button class="btn" id="bRush">🏁 Review Rush</button>');document.getElementById('bRush').onclick=openRushStudent;}}catch(e){}};}
+try{CAMP_CATS[0].ids.splice(2,0,'bRush');}catch(e){}
+{const _oaR=openAssignments;openAssignments=function(){_oaR.apply(this,arguments);const g=document.getElementById('asGo');if(!g)return;const o=g.onclick;g.onclick=function(){const v=(document.getElementById('asIn')||{}).value||'';if(v.trim().startsWith('MWR1:')){try{startRush(readRushCode(v));}catch(e){const m=document.getElementById('asMsg');if(m)m.innerHTML='<div class="bad">'+esc(e.message)+'</div>';}return;}return o&&o.apply(this,arguments);};};}
+// ----- Teacher Hub tab -----
+function rushTabHTML(){settings.rushes=settings.rushes||[];const G=stdGroups(),names=Object.keys(G);if(!rushGroup||!G[rushGroup])rushGroup=names.find(n=>/Science — 6/.test(n))||names[0];
+ const list=Object.entries(G[rushGroup]||{});
+ return`<p>Make a <b>Review Rush</b> for the week before a test: students fight a row of bosses using <b>only</b> questions from the standards you pick, then see their score for each standard.</p>
+ <div class="row"><input type="text" id="ruName" maxlength="40" placeholder="Name, e.g. Quarter 1 Science Review" style="flex:1;min-width:220px"><select id="ruB">${[3,5,7].map(n=>`<option value="${n}" ${n===5?'selected':''}>${n} bosses</option>`).join('')}</select></div>
+ <div class="row"><select id="ruG" style="flex:1">${names.map(n=>`<option ${n===rushGroup?'selected':''}>${esc(n)}</option>`).join('')}</select></div>
+ <div style="max-height:260px;overflow:auto;border:1px solid #ffffff22;border-radius:10px;padding:6px">${list.map(([c,ts])=>`<label class="item" style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" class="ruK" value="${esc(c)}"><b>${esc(c)}</b><span class="mini">${esc([...new Set(ts)].join(', '))}</span></label>`).join('')}</div>
+ <div class="row"><button class="btn gold" id="ruMake">🏁 Make Review Rush code</button><span class="mini" id="ruMsg"></span></div>
+ ${settings.rushes.length?'<h3>Your Review Rushes</h3>'+settings.rushes.slice().reverse().map(r=>`<div class="item" style="display:block"><b>${esc(r.n)}</b> <span class="mini">· ${r.b} bosses · ${r.k.map(esc).join(', ')}</span><div class="row" style="margin-top:4px"><input type="text" readonly value="${esc(rushCode(r))}" style="flex:1;font-size:12px" onclick="this.select()"><button class="btn sm" data-rucp="${r.i}">📋 Copy</button><button class="btn sm red" data-rudel="${r.i}">✕</button></div></div>`).join(''):''}
+ <p class="mini">Students paste the code at camp → ⚔️ Adventure → 🏁 Review Rush (or in 📋 Assignments).</p>`;}
+function bindRush(){if(!$('#ruMake'))return;$('#ruG').onchange=e=>{rushGroup=e.target.value;openTeacher();};
+ $('#ruMake').onclick=()=>{const k=[...document.querySelectorAll('.ruK:checked')].map(x=>x.value);const n=$('#ruName').value.trim()||'Review Rush';if(!k.length){$('#ruMsg').textContent='Pick at least one standard.';return;}
+  const r={i:rid(),n:n.slice(0,40),k,b:+$('#ruB').value,seed:Date.now()%1e6};if(rushPool(r).length<4){$('#ruMsg').textContent='Those standards have too few questions — pick more.';return;}
+  settings.rushes=(settings.rushes||[]).concat([r]);store.set(SET_KEY,settings);openTeacher();};
+ document.querySelectorAll('[data-rucp]').forEach(b=>b.onclick=()=>{const r=settings.rushes.find(x=>x.i===b.dataset.rucp);try{navigator.clipboard.writeText(rushCode(r));b.textContent='✔ Copied';}catch(e){}});
+ document.querySelectorAll('[data-rudel]').forEach(b=>b.onclick=()=>{settings.rushes=settings.rushes.filter(x=>x.i!==b.dataset.rudel);store.set(SET_KEY,settings);openTeacher();});}
+{const _otR=openTeacher;openTeacher=function(){_otR.apply(this,arguments);try{const bar=document.querySelector('#modalBody [data-tab]');if(!bar)return;const par=bar.parentElement;
+ if(!par.querySelector('[data-tab="b"]')){par.insertAdjacentHTML('beforeend',`<button class="tab${hubTab==='b'?' on':''}" data-tab="b">🏁 Review Rush</button>`);par.querySelector('[data-tab="b"]').onclick=()=>{try{saveHub(true);}catch(e){}hubTab='b';openTeacher();};}
+ if(hubTab==='b'){par.querySelectorAll('[data-tab]').forEach(t=>t.classList.toggle('on',t.dataset.tab==='b'));const hb=document.querySelector('.hubbody');if(hb){hb.innerHTML=rushTabHTML();bindRush();}}}catch(e){}};}
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
@@ -6299,6 +6398,8 @@ $('.tbtns').insertAdjacentHTML('beforeend','<button class="btn gold" id="bFull">
 {const _dbV=demoBox;demoBox=function(t,b){_dbV(t,b);const row=document.querySelector('#modalBody .row:last-child');if(row&&!$('#dmFull')){row.insertAdjacentHTML('afterbegin','<button class="btn gold" id="dmFull">⭐ Get the Full Version</button>');$('#dmFull').onclick=()=>openFull('popup');}};}
 {const _ofS=openFeedback;openFeedback=function(){_ofS();const g=$('#fbGo');if(g){const o=g.onclick;g.onclick=async function(){await o.apply(this,arguments);if(document.querySelector('#fbOk'))stat('feedback',{});};}};}
 
+// install-as-app support on the website (does nothing in a downloaded file)
+try{const ml=document.querySelector('link[rel=manifest]');if(ml&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register(ml.dataset.sw,{scope:'../'}).catch(()=>{});}catch(e){}
 // ===================== SHOWCASE MODE (auto-playing preview for the landing page; saves nothing) =====================
 if(SHOWCASE){try{store.set=function(){};settings.sound=false;settings.music=false;settings.cutscenes=false;}catch(e){}
  document.querySelectorAll('body>div').forEach(d=>{if(d.textContent==='FREE DEMO')d.remove();});
