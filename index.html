@@ -6177,6 +6177,39 @@ function demoFix(h){if(!h)return;if(h.unlocked>DEMO_D)h.unlocked=DEMO_D;if(h.lev
 {const _gc=goCamp;goCamp=function(f){demoFix(hero);_gc(f);if(hero&&hero.cleared.includes(DEMO_D)&&!hero.demoDone){hero.demoDone=1;saveHero();setTimeout(()=>demoBox('🏆 Demo Complete!','<p>You beat all '+DEMO_D+' demo dungeons, <b>'+esc(hero.name)+'</b>! The map to the treasure continues in the full game.</p>'),900);}};}
 {const _rc=renderCamp;renderCamp=function(){_rc();['#bRaids','#bTower'].forEach(s=>{const e=$(s);if(e){e.disabled=true;e.title='Full version only';e.textContent='🔒 '+e.textContent.replace(/^🔒 /,'');}});};}
 {const b=document.createElement('div');b.textContent='FREE DEMO';b.style.cssText='position:fixed;top:6px;right:6px;z-index:99999;background:#ffcf4a;color:#222;font:900 11px Nunito,sans-serif;padding:3px 8px;border-radius:6px;pointer-events:none;opacity:.9';(document.body||document.documentElement).appendChild(b);}
+
+// ===================== FEEDBACK (sent to the game maker; no names or accounts) =====================
+const FB_URL='https://firestore.googleapis.com/v1/projects/mr-walkers-hidden-treasure/databases/(default)/documents/feedback?key=AIzaSyD2Ag_w5_lK64m9uQ3tDHX48s1SqQ5caFk';
+const FB_LOG='htqDemo_fbLog';
+function fbInfo(){try{const h=hero;return [location.protocol==='file:'?'file':'web',h?('Lv'+h.level+' D'+(h.cleared||[]).length+'/5 '+(h.cls||'')):'no hero',(typeof subjOf==='function'?subjOf():''),screen||''].join(' · ').slice(0,300);}catch(e){return'';}}
+function openFeedback(){let rate=0,type='idea';
+ openModal(`<h2 class="px gold">💬 Send Feedback</h2><p>Tell the game maker what you think! Found a bug? Have an idea? Love something?</p>
+ <div class="row" id="fbType">${[['like','😀 I like it'],['idea','💡 Idea'],['bug','🐞 Bug'],['other','💬 Other']].map(([k,l])=>`<button class="btn sm${k===type?' gold':''}" data-fbt="${k}">${l}</button>`).join('')}</div>
+ <p class="mini" style="margin:6px 0 2px">How many stars would you give it?</p><div class="row" id="fbStars" style="font-size:26px;gap:2px">${[1,2,3,4,5].map(n=>`<span data-st="${n}" style="cursor:pointer;opacity:.35">⭐</span>`).join('')}</div>
+ <p class="mini" style="margin:6px 0 2px">I am a…</p><select id="fbRole"><option value="student">Student</option><option value="teacher">Teacher</option><option value="parent">Parent</option><option value="other">Other</option></select>
+ <textarea id="fbMsg" rows="5" maxlength="1500" placeholder="Type your feedback here…" style="width:100%;margin-top:8px"></textarea>
+ <div id="fbContactWrap" style="display:none"><input type="text" id="fbContact" maxlength="120" placeholder="Teachers: email if you'd like a reply (optional)" style="width:100%;margin-top:6px"></div>
+ <p class="mini">Students: please <b>don't</b> type your name, email, or school. Feedback goes straight to the game maker.</p>
+ <div id="fbErr" class="mini" style="min-height:18px;color:#ff8a8a;font-weight:800"></div>
+ <div class="row"><button class="btn gold" id="fbGo">📨 Send</button><button class="btn" id="fbX">Close</button></div>`);
+ const paint=()=>{document.querySelectorAll('[data-st]').forEach(e=>e.style.opacity=+e.dataset.st<=rate?1:.35);document.querySelectorAll('[data-fbt]').forEach(b=>b.classList.toggle('gold',b.dataset.fbt===type));};
+ document.querySelectorAll('[data-st]').forEach(e=>e.onclick=()=>{rate=+e.dataset.st;paint();});
+ document.querySelectorAll('[data-fbt]').forEach(b=>b.onclick=()=>{type=b.dataset.fbt;paint();});
+ $('#fbRole').onchange=()=>{$('#fbContactWrap').style.display=$('#fbRole').value==='teacher'?'block':'none';};
+ $('#fbX').onclick=closeModal;
+ $('#fbGo').onclick=async()=>{const er=$('#fbErr'),msg=$('#fbMsg').value.trim();if(msg.length<3){er.textContent='Please type a little more first.';return;}
+  let log=[];try{log=JSON.parse(localStorage.getItem(FB_LOG)||'[]');}catch(e){}const now=Date.now();log=log.filter(t=>now-t<864e5);
+  if(log.length&&now-log[log.length-1]<60000){er.textContent='Thanks! Please wait a minute before sending more.';return;}if(log.length>=10){er.textContent='You have sent a lot today — thank you! Try again tomorrow.';return;}
+  const role=$('#fbRole').value,contact=role==='teacher'?$('#fbContact').value.trim().slice(0,120):'';
+  const body={fields:{type:{stringValue:type},rating:{integerValue:String(rate)},msg:{stringValue:msg.slice(0,1500)},role:{stringValue:role},contact:{stringValue:contact},ver:{stringValue:'demo'},info:{stringValue:fbInfo()},t:{timestampValue:new Date().toISOString()}}};
+  $('#fbGo').disabled=true;$('#fbGo').textContent='Sending…';
+  try{const r=await fetch(FB_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);
+   log.push(now);try{localStorage.setItem(FB_LOG,JSON.stringify(log));}catch(e){}
+   openModal('<h2 class="px gold">💌 Thank you!</h2><p>Your feedback was sent. It really helps make the game better!</p><div class="row"><button class="btn gold" id="fbOk">OK</button></div>');$('#fbOk').onclick=closeModal;snd('chest');}
+  catch(e){er.textContent='Could not send. Check that you are connected to the internet, then try again.';$('#fbGo').disabled=false;$('#fbGo').textContent='📨 Send';}};}
+$('.tbtns').insertAdjacentHTML('beforeend','<button class="btn gold" id="bFeedback">💬 Feedback</button>');$('#bFeedback').onclick=openFeedback;
+{const _rcF=renderCamp;renderCamp=function(){_rcF();const r=document.querySelector('#bSave')||document.querySelector('#bCode');if(r&&!$('#bFeedC')){r.insertAdjacentHTML('afterend','<button class="btn" id="bFeedC">💬 Feedback</button>');$('#bFeedC').onclick=openFeedback;}};}
+{const _dbF=demoBox;demoBox=function(t,b){_dbF(t,b);const row=document.querySelector('#modalBody .row:last-child');if(row&&!$('#dmFb')){row.insertAdjacentHTML('beforeend','<button class="btn" id="dmFb">💬 Send Feedback</button>');$('#dmFb').onclick=openFeedback;}};}
 </script>
 </body>
 </html>
