@@ -6149,6 +6149,48 @@ function xpFactor(){const dl=monLv();if(!dl||!hero)return 1;const diff=hero.leve
  if(n>=2)D.enemies.forEach(e=>{if(e.mist){e.mist=false;e.name=String(e.name).replace('👻 Mistake ','');e.xp=Math.round(e.xp/2);}});}catch(x){}};}
 {const _ohB=openHelp;openHelp=function(){_ohB();const ul=document.querySelector('#modalBody .help');if(ul)ul.insertAdjacentHTML('beforeend','<li>🛡️ <b>One helper per question:</b> 50/50, a bribe, or an ability that removes answers — pick one.</li><li>⚡ <b>Slow down:</b> a wrong answer clicked in the first couple of seconds costs a little gold.</li><li>📉 Monsters 10+ levels below you give less XP — try harder dungeons!</li><li>👻 Mistake Monsters give their bonus up to 2 times a day, only if you answer every question right.</li>');};}
 
+// ===================== V33: CAMP MENU GROUPED INTO CATEGORIES =====================
+// Keeps Explore / Subject / class badge / holiday banner on top; everything else goes into tabbed categories.
+const CAMP_CATS=[
+ {k:'adv',n:'⚔️ Adventure',ids:['bRepair','bHard','bDaily','bTower','bRaids','bDex','bJour']},
+ {k:'hero',n:'🎒 Hero & Gear',ids:['bTal','bBag','bForge','bShop','bProf','bBarb','bWard','bCabin']},
+ {k:'fun',n:'🐾 Pets & Games',ids:['bPets','bFish','bMatch']},
+ {k:'learn',n:'📚 Learning',ids:['bAsg','bLib','bStudy','bVocab','bScroll','bWriteQ','bRedeem']},
+ {k:'set',n:'⚙️ Class & Settings',ids:['bSub','bMyClass','bTimer','bA11y2','bHelp','bCode','bFeedC','bQuit']}];
+const CAMP_TOP=['bWorld','bSubj','bEvent','classBadge'];
+let campTab=(()=>{try{return localStorage.getItem('htqDemo_campTab')||'adv';}catch(e){return'adv';}})();
+function campGroup(){const w=document.getElementById('bWorld');if(!w||document.getElementById('campCats'))return;
+ const panel=w.closest('.row').parentElement;if(!panel)return;
+ const rows=[...panel.children].filter(el=>el.classList&&el.classList.contains('row')&&el.querySelector('button'));
+ const btns=[];rows.forEach(r=>r.querySelectorAll('button').forEach(b=>{if(!CAMP_TOP.includes(b.id))btns.push(b);}));
+ if(btns.length<6)return;
+ const box=document.createElement('div');box.id='campCats';
+ const bar=document.createElement('div');bar.className='campTabs';box.appendChild(bar);
+ const panes={};CAMP_CATS.forEach(c=>{const p=document.createElement('div');p.className='row campPane';p.dataset.cat=c.k;panes[c.k]=p;});
+ const catOf=b=>{const c=CAMP_CATS.find(c=>c.ids.includes(b.id));if(c)return c.k;const t=b.textContent;if(/Tower|Raid|Quest|Bestiary|Journal/i.test(t))return'adv';if(/Pet|Fish|Match/i.test(t))return'fun';if(/Library|Study|Vocab|Assign|Scroll|Question|Redeem/i.test(t))return'learn';if(/Talent|Bag|Forge|Merchant|Wardrobe|Appearance|Profession|Cabin/i.test(t))return'hero';return'set';};
+ btns.forEach(b=>{const k=catOf(b);const c=CAMP_CATS.find(x=>x.k===k);const idx=c.ids.indexOf(b.id);b.dataset.ord=idx<0?99:idx;panes[k].appendChild(b);});
+ Object.values(panes).forEach(p=>[...p.children].sort((a,b)=>a.dataset.ord-b.dataset.ord).forEach(b=>p.appendChild(b)));
+ CAMP_CATS.forEach(c=>{const p=panes[c.k];if(!p.children.length)return;const t=document.createElement('button');t.className='btn sm campTab';t.dataset.cat=c.k;
+  const hot=p.querySelector('.pulse');t.innerHTML=c.n+(hot?' <span class="campDot">●</span>':'')+` <span class="campN">${p.children.length}</span>`;
+  t.onclick=()=>{campTab=c.k;try{localStorage.setItem('htqDemo_campTab',c.k);}catch(e){}campShow();};bar.appendChild(t);box.appendChild(p);});
+ // remove rows that are now empty, keep the top row (Explore/Subject) and the event banner row
+ rows.forEach(r=>{if(!r.querySelector('button'))r.remove();});
+ const topRow=w.closest('.row');const after=document.getElementById('bEvent');const anchor=after&&after.closest('.row')&&after.closest('.row').parentElement===panel?after.closest('.row'):topRow;
+ anchor.insertAdjacentElement('afterend',box);
+ if(!panes[campTab]||!panes[campTab].children.length)campTab='adv';campShow();}
+function campShow(){const box=document.getElementById('campCats');if(!box)return;
+ box.querySelectorAll('.campTab').forEach(t=>t.classList.toggle('on',t.dataset.cat===campTab));
+ box.querySelectorAll('.campPane').forEach(p=>p.style.display=p.dataset.cat===campTab?'':'none');}
+{const st=document.createElement('style');st.textContent=`#campCats{margin:8px 0 2px;border:1px solid #ffffff1f;border-radius:14px;padding:8px;background:#00000026}
+.campTabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.campTab{opacity:.75}.campTab.on{opacity:1;background:linear-gradient(#ffd965,#e9ad2c)!important;color:#231a00!important;border-color:#b98418!important}
+.campDot{color:#ff6b6b;font-size:12px}.campTab.on .campDot{color:#a01818}.campN{font-size:11px;opacity:.7;margin-left:2px}.campPane{margin:0!important;min-height:44px}`;document.head.appendChild(st);}
+{const _rcG=renderCamp;renderCamp=function(){_rcG.apply(this,arguments);Promise.resolve().then(campGroup);};}
+// ===== Fix: pressing keys / moving no longer re-schedules music, which stacked extra notes on every step =====
+try{document.removeEventListener('pointerdown',initAudio);document.removeEventListener('keydown',initAudio);}catch(e){}
+function audioWake(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
+ if(settings.music&&MU.song){if(!MU.next||MU.next<AC.currentTime)MU.next=AC.currentTime+.1;if(!MU.timer)MU.timer=setInterval(musicTick,40);}}catch(e){}}
+document.addEventListener('pointerdown',audioWake);document.addEventListener('keydown',audioWake);
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
