@@ -4,6 +4,7 @@
 <meta name="description" content="A dungeon-crawler learning game for grades 5–8. Every attack is a question. Science, Social Studies, ELA and Math aligned to Oklahoma Academic Standards. Play the free demo.">
 <meta property="og:title" content="Hidden Treasure Quest — a learning dungeon quest for grades 5–8">
 <meta property="og:description" content="Every attack is a question. Play the free demo in your browser.">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1d1830"><link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -54,7 +55,7 @@ footer{padding:30px 0 50px;color:var(--mute);font-size:14px;border-top:1px solid
   <h1 class="px">Every attack is a question.</h1>
   <p class="lead">Students explore dungeons, battle monsters, and collect loot — and the only way to win a fight is to <b>answer questions correctly</b>. It runs right in the browser on Chromebooks and computers.</p>
   <div class="cta"><a class="btn gold" href="play/">▶ Play the Free Demo</a><a class="btn" href="#full">⭐ Get the Full Version</a></div>
-  <div class="mute" style="color:var(--mute);font-size:14px">No sign-up. No student accounts. Nothing to install.</div>
+  <div class="mute" style="color:var(--mute);font-size:14px">No sign-up. No student accounts. Nothing to install. <button class="btn sm" id="inst" style="display:none;margin-left:6px">📲 Install as an app</button></div>
   <div class="pills"><span class="pill">🔬 Science</span><span class="pill">🌎 Social Studies</span><span class="pill">📖 ELA</span><span class="pill">➗ Math</span><span class="pill">✅ Oklahoma Academic Standards</span></div>
  </div>
  <div><div class="live" id="live"><iframe src="play/?showcase=1" title="The game playing itself: a hero answers questions to defeat monsters" tabindex="-1" loading="eager"></iframe></div><div class="livecap">▶ Live preview — the real game, playing itself</div></div>
@@ -116,7 +117,7 @@ footer{padding:30px 0 50px;color:var(--mute);font-size:14px;border-top:1px solid
   <label for="fvMsg">Anything else?</label><textarea id="fvMsg" rows="3" maxlength="800"></textarea>
   <div style="margin-top:14px"><button class="btn gold" type="submit" id="fvGo">📨 Send request</button></div>
   <div class="msg" id="fvOut" role="status"></div>
-  <p style="color:var(--mute);font-size:13px;margin:6px 0 0">For adults only. Your info is only used to reply to you.</p>
+  <p style="color:var(--mute);font-size:13px;margin:6px 0 0">For adults only. Your info is only used to reply to you. See our <a href="privacy.html">privacy page</a>.</p>
  </form>
 </div></section>
 
@@ -124,14 +125,17 @@ footer{padding:30px 0 50px;color:var(--mute);font-size:14px;border-top:1px solid
  <h2 class="px">Questions</h2>
  <details><summary>What devices does it run on?</summary><p>Chromebooks and Windows or Mac computers with a modern browser (Chrome, Edge, Firefox, or Safari). Nothing to install.</p></details>
  <details><summary>Do students need accounts or email addresses?</summary><p>No. Students just type a hero name. Progress saves on the device, and a Save Code moves it to another computer.</p></details>
- <details><summary>Does it need the internet?</summary><p>Only to load the page. The downloadable version works offline once it's on the computer.</p></details>
+ <details><summary>Does it need the internet?</summary><p>Only to load the page the first time. After that, the demo works offline. You can also install it like an app (look for 📲 Install, or the install icon in Chrome's address bar).</p></details>
+ <details><summary>What information does it collect?</summary><p>No student accounts or names. Progress stays on the device. The demo sends anonymous play stats and any feedback you choose to send. See the <a href="privacy.html">privacy page</a>.</p></details>
  <details><summary>What standards does it cover?</summary><p>Grades 5–8 Science, Social Studies, ELA, and Math, tagged to Oklahoma Academic Standards.</p></details>
  <details><summary>How much is the full version?</summary><p>Fill out the <a href="#full">request form</a> and you'll get details by email.</p></details>
 </div></section>
 
-<footer><div class="wrap">💎 Hidden Treasure Quest · Made by a classroom teacher in Oklahoma · <a href="play/">Play the demo</a> · <a href="guide.html">Quick-start guide</a> · <a href="play/#feedback">Send feedback</a></div></footer>
+<footer><div class="wrap">💎 Hidden Treasure Quest · Made by a classroom teacher in Oklahoma · <a href="play/">Play the demo</a> · <a href="guide.html">Quick-start guide</a> · <a href="play/#feedback">Send feedback</a> · <a href="privacy.html">Privacy</a></div></footer>
 
 <script>
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+let deferredInstall=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;const b=document.getElementById('inst');b.style.display='inline-block';b.onclick=async()=>{b.style.display='none';deferredInstall.prompt();try{await deferredInstall.userChoice;}catch(x){}deferredInstall=null;};});
 (function(){const L=document.getElementById('live'),F=L.querySelector('iframe');const fit=()=>{F.style.transform='scale('+(L.clientWidth/1100)+')';};fit();new ResizeObserver(fit).observe(L);})();
 (function(){const U='https://firestore.googleapis.com/v1/projects/mr-walkers-hidden-treasure/databases/(default)/documents/interest?key=AIzaSyD2Ag_w5_lK64m9uQ3tDHX48s1SqQ5caFk';
 const $=id=>document.getElementById(id),out=$('fvOut');
