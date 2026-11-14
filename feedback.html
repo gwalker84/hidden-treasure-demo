@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo Feedback Inbox</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+:root{--bg:#120f1c;--card:#1e1a2c;--line:#3a3352;--text:#f1eefa;--mute:#a9a2c0;--gold:#ffcf4a;--good:#5fd36f;--bad:#ff7a7a;--blue:#7cc4ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:22px;margin:0 0 4px;color:var(--gold)}.mute{color:var(--mute);font-size:13px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+button,select,input{font:inherit;border-radius:8px;border:1px solid var(--line);background:#2a2440;color:var(--text);padding:7px 12px}
+button{cursor:pointer;font-weight:700}button.gold{background:var(--gold);color:#222;border-color:#c9a031}button:disabled{opacity:.5;cursor:default}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}.stat b{display:block;font-size:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0}
+.card.done{opacity:.55}.top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.tag{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:800;background:#2f2947}
+.t-bug{background:#5a1f26;color:#ffb3b3}.t-idea{background:#3d3410;color:#ffe08a}.t-like{background:#173d22;color:#a6f0b2}.t-other{background:#1d3550;color:#b6dcff}
+.msg{white-space:pre-wrap;margin:8px 0 6px;font-size:16px}.acts{display:flex;gap:6px}.acts button{padding:4px 10px;font-size:13px}
+.empty{padding:30px;text-align:center;color:var(--mute)}.err{color:var(--bad);font-weight:700}
+</style></head><body><div class="wrap">
+<h1>💬 Demo Feedback Inbox</h1>
+<div class="mute">Feedback sent from the Hidden Treasure Quest free demo. Only the owner's Google account can read it.</div>
+<div class="bar" id="auth"><span class="mute">Loading…</span></div>
+<div id="main"></div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({apiKey:"AIzaSyD2Ag_w5_lK64m9uQ3tDHX48s1SqQ5caFk",authDomain:"mr-walkers-hidden-treasure.firebaseapp.com",projectId:"mr-walkers-hidden-treasure",appId:"1:476984520949:web:d67014256b2fe3a5ee55bc"});
+const auth=firebase.auth(),db=firebase.firestore();
+const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TYPES={bug:'🐞 Bug',idea:'💡 Idea',like:'😀 Likes it',other:'💬 Other'};
+let rows=[],unsub=null,fType='all',fShow='open';
+function authBar(u){$('#auth').innerHTML=u?`<span class="mute">Signed in as ${esc(u.email||'(no email)')}</span><button id="out">Sign out</button>`:`<button class="gold" id="in">Sign in with Google</button><span class="mute">Use your school Google account.</span>`;
+ if(u)$('#out').onclick=()=>auth.signOut();else $('#in').onclick=()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{$('#main').innerHTML=`<p class="err">Sign-in failed: ${esc(e.message)}</p>`;});}
+function when(t){const d=t&&t.toDate?t.toDate():null;return d?d.toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):'';}
+function render(){const list=rows.filter(r=>(fType==='all'||r.type===fType)&&(fShow==='all'||(fShow==='open'?!r.done:r.done)));
+ const rated=rows.filter(r=>r.rating>0),avg=rated.length?(rated.reduce((a,r)=>a+r.rating,0)/rated.length).toFixed(1):'—';
+ const cnt=k=>rows.filter(r=>r.type===k).length;
+ $('#main').innerHTML=`<div class="stats"><div class="stat"><b>${rows.length}</b>total</div><div class="stat"><b>${rows.filter(r=>!r.done).length}</b>not done yet</div><div class="stat"><b>${avg} ⭐</b>average (${rated.length} ratings)</div><div class="stat"><b>${cnt('bug')}</b>bugs</div><div class="stat"><b>${cnt('idea')}</b>ideas</div><div class="stat"><b>${cnt('like')}</b>likes</div></div>
+ <div class="bar"><select id="fT"><option value="all">All types</option>${Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${fType===k?'selected':''}>${v}</option>`).join('')}</select>
+ <select id="fS"><option value="open" ${fShow==='open'?'selected':''}>Not done</option><option value="done" ${fShow==='done'?'selected':''}>Done</option><option value="all" ${fShow==='all'?'selected':''}>Everything</option></select>
+ <button id="csv">⬇️ Download CSV</button></div>
+ ${list.length?list.map(r=>`<div class="card${r.done?' done':''}"><div class="top"><div><span class="tag t-${esc(r.type)}">${TYPES[r.type]||esc(r.type)}</span> ${r.rating?'⭐'.repeat(r.rating):'<span class="mute">no stars</span>'} <span class="mute">· ${esc(r.role)} · ${when(r.t)}</span></div>
+  <div class="acts"><button data-done="${r.id}">${r.done?'↩️ Not done':'✔ Done'}</button><button data-del="${r.id}">🗑️</button></div></div>
+  <div class="msg">${esc(r.msg)}</div>${r.contact?`<div class="mute">Reply to: <b>${esc(r.contact)}</b></div>`:''}<div class="mute">${esc(r.info)}</div></div>`).join(''):'<div class="empty">Nothing here yet.</div>'}`;
+ $('#fT').onchange=e=>{fType=e.target.value;render();};$('#fS').onchange=e=>{fShow=e.target.value;render();};$('#csv').onclick=csv;
+ document.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.id===b.dataset.done);db.collection('feedback').doc(r.id).update({done:!r.done}).catch(e=>alertMsg(e));});
+ document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(b.dataset.sure){db.collection('feedback').doc(b.dataset.del).delete().catch(e=>alertMsg(e));}else{b.dataset.sure=1;b.textContent='Delete?';setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='🗑️';}},3000);}});}
+function alertMsg(e){const p=document.createElement('p');p.className='err';p.textContent='Could not save: '+(e.message||e);$('#main').prepend(p);}
+function csv(){const c=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';const out=[['Date','Type','Stars','Role','Message','Reply to','Details','Done']].concat(rows.map(r=>[when(r.t),r.type,r.rating||'',r.role,r.msg,r.contact,r.info,r.done?'yes':'']));
+ const blob=new Blob(['﻿'+out.map(r=>r.map(c).join(',')).join('\r\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='demo-feedback-'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
+auth.onAuthStateChanged(u=>{authBar(u);if(unsub){unsub();unsub=null;}rows=[];
+ if(!u){$('#main').innerHTML='<div class="empty">Sign in to see feedback.</div>';return;}
+ $('#main').innerHTML='<div class="empty">Loading feedback…</div>';
+ unsub=db.collection('feedback').orderBy('t','desc').limit(500).onSnapshot(s=>{rows=s.docs.map(d=>Object.assign({id:d.id},d.data()));render();},
+  e=>{$('#main').innerHTML=`<p class="err">This account can't read the feedback.</p><p class="mute">Sign out and sign in with the game owner's Google account. (${esc(e.code||e.message)})</p>`;});});
+</script></body></html>
