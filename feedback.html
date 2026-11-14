@@ -1,16 +1,17 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Demo Feedback Inbox</title>
+<title>Demo Inbox</title>
 <meta name="robots" content="noindex,nofollow">
 <style>
 :root{--bg:#120f1c;--card:#1e1a2c;--line:#3a3352;--text:#f1eefa;--mute:#a9a2c0;--gold:#ffcf4a;--good:#5fd36f;--bad:#ff7a7a;--blue:#7cc4ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.wrap{max-width:980px;margin:0 auto;padding:20px 16px 60px}
-h1{font-size:22px;margin:0 0 4px;color:var(--gold)}.mute{color:var(--mute);font-size:13px}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:22px;margin:0 0 4px;color:var(--gold)}h2{font-size:17px;margin:22px 0 8px}.mute{color:var(--mute);font-size:13px}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
 button,select,input{font:inherit;border-radius:8px;border:1px solid var(--line);background:#2a2440;color:var(--text);padding:7px 12px}
-button{cursor:pointer;font-weight:700}button.gold{background:var(--gold);color:#222;border-color:#c9a031}button:disabled{opacity:.5;cursor:default}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
+button{cursor:pointer;font-weight:700}button.gold,.tab.on{background:var(--gold);color:#222;border-color:#c9a031}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:12px 0}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}.stat b{display:block;font-size:22px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0}
 .card.done{opacity:.55}.top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
@@ -18,10 +19,14 @@ button{cursor:pointer;font-weight:700}button.gold{background:var(--gold);color:#
 .t-bug{background:#5a1f26;color:#ffb3b3}.t-idea{background:#3d3410;color:#ffe08a}.t-like{background:#173d22;color:#a6f0b2}.t-other{background:#1d3550;color:#b6dcff}
 .msg{white-space:pre-wrap;margin:8px 0 6px;font-size:16px}.acts{display:flex;gap:6px}.acts button{padding:4px 10px;font-size:13px}
 .empty{padding:30px;text-align:center;color:var(--mute)}.err{color:var(--bad);font-weight:700}
+.hb{display:grid;grid-template-columns:150px 1fr 84px;gap:8px;align-items:center;margin:4px 0;font-size:14px}
+.hb .tr{background:#2a2440;border-radius:6px;height:16px;overflow:hidden}.hb .fl{height:100%;background:var(--gold)}
+.hb .n{text-align:right;color:var(--mute)}
 </style></head><body><div class="wrap">
-<h1>💬 Demo Feedback Inbox</h1>
-<div class="mute">Feedback sent from the Hidden Treasure Quest free demo. Only the owner's Google account can read it.</div>
+<h1>📬 Demo Inbox</h1>
+<div class="mute">Feedback, Full Version requests, and anonymous play stats from the Hidden Treasure Quest free demo. Only the owner's Google account can read this.</div>
 <div class="bar" id="auth"><span class="mute">Loading…</span></div>
+<div class="tabs" id="tabs"></div>
 <div id="main"></div>
 </div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -32,29 +37,60 @@ firebase.initializeApp({apiKey:"AIzaSyD2Ag_w5_lK64m9uQ3tDHX48s1SqQ5caFk",authDom
 const auth=firebase.auth(),db=firebase.firestore();
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const TYPES={bug:'🐞 Bug',idea:'💡 Idea',like:'😀 Likes it',other:'💬 Other'};
-let rows=[],unsub=null,fType='all',fShow='open';
+const ROLES={teacher:'🍎 Teacher',admin:'🏫 School leader',parent:'🏠 Parent',student:'🎒 Student',other:'🙂 Other',none:'(no answer)'};
+const SUBJ={sci:'Science',hist:'Social Studies',oaap:'OAAP Science',ela:'ELA',math:'Math'};
+let tab='fb',data={feedback:[],interest:[],stats:[]},subs=[],err={},fType='all',fShow='open',iShow='open',days=30;
+function when(t){const d=t&&t.toDate?t.toDate():null;return d?d.toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):'';}
 function authBar(u){$('#auth').innerHTML=u?`<span class="mute">Signed in as ${esc(u.email||'(no email)')}</span><button id="out">Sign out</button>`:`<button class="gold" id="in">Sign in with Google</button><span class="mute">Use your school Google account.</span>`;
  if(u)$('#out').onclick=()=>auth.signOut();else $('#in').onclick=()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{$('#main').innerHTML=`<p class="err">Sign-in failed: ${esc(e.message)}</p>`;});}
-function when(t){const d=t&&t.toDate?t.toDate():null;return d?d.toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):'';}
-function render(){const list=rows.filter(r=>(fType==='all'||r.type===fType)&&(fShow==='all'||(fShow==='open'?!r.done:r.done)));
- const rated=rows.filter(r=>r.rating>0),avg=rated.length?(rated.reduce((a,r)=>a+r.rating,0)/rated.length).toFixed(1):'—';
- const cnt=k=>rows.filter(r=>r.type===k).length;
- $('#main').innerHTML=`<div class="stats"><div class="stat"><b>${rows.length}</b>total</div><div class="stat"><b>${rows.filter(r=>!r.done).length}</b>not done yet</div><div class="stat"><b>${avg} ⭐</b>average (${rated.length} ratings)</div><div class="stat"><b>${cnt('bug')}</b>bugs</div><div class="stat"><b>${cnt('idea')}</b>ideas</div><div class="stat"><b>${cnt('like')}</b>likes</div></div>
- <div class="bar"><select id="fT"><option value="all">All types</option>${Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${fType===k?'selected':''}>${v}</option>`).join('')}</select>
- <select id="fS"><option value="open" ${fShow==='open'?'selected':''}>Not done</option><option value="done" ${fShow==='done'?'selected':''}>Done</option><option value="all" ${fShow==='all'?'selected':''}>Everything</option></select>
- <button id="csv">⬇️ Download CSV</button></div>
- ${list.length?list.map(r=>`<div class="card${r.done?' done':''}"><div class="top"><div><span class="tag t-${esc(r.type)}">${TYPES[r.type]||esc(r.type)}</span> ${r.rating?'⭐'.repeat(r.rating):'<span class="mute">no stars</span>'} <span class="mute">· ${esc(r.role)} · ${when(r.t)}</span></div>
-  <div class="acts"><button data-done="${r.id}">${r.done?'↩️ Not done':'✔ Done'}</button><button data-del="${r.id}">🗑️</button></div></div>
-  <div class="msg">${esc(r.msg)}</div>${r.contact?`<div class="mute">Reply to: <b>${esc(r.contact)}</b></div>`:''}<div class="mute">${esc(r.info)}</div></div>`).join(''):'<div class="empty">Nothing here yet.</div>'}`;
- $('#fT').onchange=e=>{fType=e.target.value;render();};$('#fS').onchange=e=>{fShow=e.target.value;render();};$('#csv').onclick=csv;
- document.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.id===b.dataset.done);db.collection('feedback').doc(r.id).update({done:!r.done}).catch(e=>alertMsg(e));});
- document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(b.dataset.sure){db.collection('feedback').doc(b.dataset.del).delete().catch(e=>alertMsg(e));}else{b.dataset.sure=1;b.textContent='Delete?';setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='🗑️';}},3000);}});}
+function tabsBar(){const nf=data.feedback.filter(r=>!r.done).length,ni=data.interest.filter(r=>!r.done).length;
+ $('#tabs').innerHTML=[['fb',`💬 Feedback${nf?' ('+nf+')':''}`],['in',`⭐ Full Version requests${ni?' ('+ni+')':''}`],['st','📊 Play stats']].map(([k,l])=>`<button class="tab${tab===k?' on':''}" data-t="${k}">${l}</button>`).join('');
+ document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render();});}
+function render(){tabsBar();const m=$('#main');const col=tab==='fb'?'feedback':tab==='in'?'interest':'stats';
+ if(err[col]){m.innerHTML=`<p class="err">This account can't read this.</p><p class="mute">Sign out and sign in with the game owner's Google account. (${esc(err[col])})</p>`;return;}
+ if(tab==='fb')renderFb(m);else if(tab==='in')renderIn(m);else renderSt(m);}
+function actions(col,r){return`<div class="acts"><button data-done="${col}|${r.id}">${r.done?'↩️ Not done':'✔ Done'}</button><button data-del="${col}|${r.id}">🗑️</button></div>`;}
+function bindActs(){document.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const[c,id]=b.dataset.done.split('|');const r=data[c].find(x=>x.id===id);db.collection(c).doc(id).update({done:!r.done}).catch(alertMsg);});
+ document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const[c,id]=b.dataset.del.split('|');if(b.dataset.sure){db.collection(c).doc(id).delete().catch(alertMsg);}else{b.dataset.sure=1;b.textContent='Delete?';setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='🗑️';}},3000);}});}
 function alertMsg(e){const p=document.createElement('p');p.className='err';p.textContent='Could not save: '+(e.message||e);$('#main').prepend(p);}
-function csv(){const c=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';const out=[['Date','Type','Stars','Role','Message','Reply to','Details','Done']].concat(rows.map(r=>[when(r.t),r.type,r.rating||'',r.role,r.msg,r.contact,r.info,r.done?'yes':'']));
- const blob=new Blob(['﻿'+out.map(r=>r.map(c).join(',')).join('\r\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='demo-feedback-'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
-auth.onAuthStateChanged(u=>{authBar(u);if(unsub){unsub();unsub=null;}rows=[];
- if(!u){$('#main').innerHTML='<div class="empty">Sign in to see feedback.</div>';return;}
- $('#main').innerHTML='<div class="empty">Loading feedback…</div>';
- unsub=db.collection('feedback').orderBy('t','desc').limit(500).onSnapshot(s=>{rows=s.docs.map(d=>Object.assign({id:d.id},d.data()));render();},
-  e=>{$('#main').innerHTML=`<p class="err">This account can't read the feedback.</p><p class="mute">Sign out and sign in with the game owner's Google account. (${esc(e.code||e.message)})</p>`;});});
+function renderFb(m){const rows=data.feedback,list=rows.filter(r=>(fType==='all'||r.type===fType)&&(fShow==='all'||(fShow==='open'?!r.done:r.done)));
+ const rated=rows.filter(r=>r.rating>0),avg=rated.length?(rated.reduce((a,r)=>a+r.rating,0)/rated.length).toFixed(1):'—',cnt=k=>rows.filter(r=>r.type===k).length;
+ m.innerHTML=`<div class="stats"><div class="stat"><b>${rows.length}</b>total</div><div class="stat"><b>${rows.filter(r=>!r.done).length}</b>not done yet</div><div class="stat"><b>${avg} ⭐</b>average (${rated.length} ratings)</div><div class="stat"><b>${cnt('bug')}</b>bugs</div><div class="stat"><b>${cnt('idea')}</b>ideas</div><div class="stat"><b>${cnt('like')}</b>likes</div></div>
+ <div class="bar"><select id="fT"><option value="all">All types</option>${Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${fType===k?'selected':''}>${v}</option>`).join('')}</select>
+ <select id="fS"><option value="open" ${fShow==='open'?'selected':''}>Not done</option><option value="done" ${fShow==='done'?'selected':''}>Done</option><option value="all" ${fShow==='all'?'selected':''}>Everything</option></select><button id="csv">⬇️ Download CSV</button></div>
+ ${list.length?list.map(r=>`<div class="card${r.done?' done':''}"><div class="top"><div><span class="tag t-${esc(r.type)}">${TYPES[r.type]||esc(r.type)}</span> ${r.rating?'⭐'.repeat(r.rating):'<span class="mute">no stars</span>'} <span class="mute">· ${esc(r.role)} · ${when(r.t)}</span></div>${actions('feedback',r)}</div>
+  <div class="msg">${esc(r.msg)}</div>${r.contact?`<div class="mute">Reply to: <b>${esc(r.contact)}</b></div>`:''}<div class="mute">${esc(r.info)}</div></div>`).join(''):'<div class="empty">Nothing here yet.</div>'}`;
+ $('#fT').onchange=e=>{fType=e.target.value;render();};$('#fS').onchange=e=>{fShow=e.target.value;render();};
+ $('#csv').onclick=()=>csv('demo-feedback',[['Date','Type','Stars','Role','Message','Reply to','Details','Done']].concat(rows.map(r=>[when(r.t),r.type,r.rating||'',r.role,r.msg,r.contact,r.info,r.done?'yes':''])));bindActs();}
+function renderIn(m){const rows=data.interest,list=rows.filter(r=>iShow==='all'||(iShow==='open'?!r.done:r.done));
+ m.innerHTML=`<div class="stats"><div class="stat"><b>${rows.length}</b>requests</div><div class="stat"><b>${rows.filter(r=>!r.done).length}</b>not contacted yet</div><div class="stat"><b>${rows.filter(r=>r.role==='teacher').length}</b>teachers</div><div class="stat"><b>${rows.filter(r=>r.role==='admin').length}</b>school leaders</div></div>
+ <div class="bar"><select id="iS"><option value="open" ${iShow==='open'?'selected':''}>Not contacted</option><option value="done" ${iShow==='done'?'selected':''}>Contacted</option><option value="all" ${iShow==='all'?'selected':''}>Everything</option></select><button id="csv">⬇️ Download CSV</button></div>
+ <p class="mute">Mark a request ✔ Done after you email them.</p>
+ ${list.length?list.map(r=>`<div class="card${r.done?' done':''}"><div class="top"><div><b>${esc(r.name||'(no name)')}</b> <span class="tag">${ROLES[r.role]||esc(r.role)}</span> <span class="mute">· ${when(r.t)} · from ${esc(r.src)}</span></div>${actions('interest',r)}</div>
+  <div style="margin-top:6px">📧 <a href="mailto:${esc(r.email)}" style="color:var(--blue)">${esc(r.email)}</a>${r.school?` · 🏫 ${esc(r.school)}`:''}${r.grades?` · 📚 ${esc(r.grades)}`:''}</div>${r.msg?`<div class="msg">${esc(r.msg)}</div>`:''}</div>`).join(''):'<div class="empty">No requests yet.</div>'}`;
+ $('#iS').onchange=e=>{iShow=e.target.value;render();};
+ $('#csv').onclick=()=>csv('full-version-requests',[['Date','Name','Role','Email','School','Grades','Message','From','Contacted']].concat(rows.map(r=>[when(r.t),r.name,r.role,r.email,r.school,r.grades,r.msg,r.src,r.done?'yes':''])));bindActs();}
+function bars(title,pairs,total){const mx=Math.max(1,...pairs.map(p=>p[1]));return`<h2>${title}</h2>`+(pairs.length?pairs.map(([l,n])=>`<div class="hb"><div>${esc(l)}</div><div class="tr"><div class="fl" style="width:${n/mx*100}%"></div></div><div class="n">${n}${total?` · ${Math.round(n/total*100)}%`:''}</div></div>`).join(''):'<p class="mute">No data yet.</p>');}
+function renderSt(m){const cut=days?Date.now()-days*864e5:0;const S=data.stats.filter(r=>!cut||(r.t&&r.t.toMillis()>=cut));
+ const uniq=ev=>new Set(S.filter(r=>r.ev===ev).map(r=>r.pid)).size;const players=new Set(S.map(r=>r.pid)).size;
+ const best={};S.filter(r=>r.ev==='clear').forEach(r=>{best[r.pid]=Math.max(best[r.pid]||0,r.d||0);});
+ const heroes=uniq('hero');const funnel=[['Opened the demo',players],['Made a hero',heroes]].concat([1,2,3,4,5].map(d=>[`Beat Dungeon ${d}`,Object.values(best).filter(v=>v>=d).length]));
+ const sv=S.filter(r=>r.ev==='survey'&&r.ans!=='skip');const svc=k=>sv.filter(r=>r.ans===k).length;
+ const count=(arr,key,map)=>{const o={};arr.forEach(r=>{const k=r[key]||'?';o[k]=(o[k]||0)+1;});return Object.entries(o).sort((a,b)=>b[1]-a[1]).map(([k,n])=>[(map&&map[k])||k,n]);};
+ const heroEv=S.filter(r=>r.ev==='hero');
+ m.innerHTML=`<div class="bar"><span class="mute">Show the last</span><select id="dd">${[[7,'7 days'],[30,'30 days'],[90,'90 days'],[0,'all time']].map(([v,l])=>`<option value="${v}" ${days===v?'selected':''}>${l}</option>`).join('')}</select><span class="mute">No names are collected — each device gets a random ID.</span></div>
+ <div class="stats"><div class="stat"><b>${players}</b>devices played</div><div class="stat"><b>${heroes}</b>made a hero</div><div class="stat"><b>${Object.values(best).filter(v=>v>=5).length}</b>finished the demo</div><div class="stat"><b>${uniq('full')}</b>clicked Full Version</div><div class="stat"><b>${uniq('interest')}</b>sent a request</div><div class="stat"><b>${uniq('feedback')}</b>sent feedback</div></div>
+ ${bars('🪜 How far players get',funnel,players)}
+ <p class="mute">The biggest drop between two rows shows where players quit.</p>
+ ${bars('⭐ Quick survey: "How do you like it so far?"',[['😍 Love it',svc('love')],['🙂 It\'s OK',svc('ok')],['😕 Not for me',svc('no')]],sv.length)}
+ ${bars('🙋 Who answered the survey',count(sv,'role',ROLES),sv.length)}
+ ${bars('📚 Subjects picked',count(heroEv,'subj',SUBJ),heroEv.length)}
+ ${bars('🎭 Classes picked',count(heroEv,'cls'),heroEv.length)}
+ ${bars('🌐 Played on',count(S.filter(r=>r.ev==='open'),'src',{web:'Website',file:'Downloaded file'}),0)}`;
+ $('#dd').onchange=e=>{days=+e.target.value;render();};}
+function csv(name,rows){const c=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';const blob=new Blob(['﻿'+rows.map(r=>r.map(c).join(',')).join('\r\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'-'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
+auth.onAuthStateChanged(u=>{authBar(u);subs.forEach(f=>f());subs=[];data={feedback:[],interest:[],stats:[]};err={};
+ if(!u){$('#tabs').innerHTML='';$('#main').innerHTML='<div class="empty">Sign in to see your inbox.</div>';return;}
+ $('#main').innerHTML='<div class="empty">Loading…</div>';
+ [['feedback',500],['interest',500],['stats',5000]].forEach(([c,n])=>subs.push(db.collection(c).orderBy('t','desc').limit(n).onSnapshot(s=>{data[c]=s.docs.map(d=>Object.assign({id:d.id},d.data()));delete err[c];render();},e=>{err[c]=e.code||e.message;render();})));});
 </script></body></html>
