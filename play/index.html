@@ -6218,7 +6218,8 @@ function fsAdd(col,obj){const f={};Object.entries(obj).forEach(([k,v])=>{f[k]=ty
  return fetch(FS_BASE+col+FS_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:f})}).then(r=>{if(!r.ok)throw new Error(r.status);return r;});}
 const STAT_PID=(()=>{try{let p=localStorage.getItem('htqDemo_pid');if(!p){p=Math.random().toString(36).slice(2,12);localStorage.setItem('htqDemo_pid',p);}return p;}catch(e){return'x'+Math.random().toString(36).slice(2,10);}})();
 const STAT_SRC=location.protocol==='file:'?'file':'web';
-function stat(ev,x){x=x||{};try{const o={ev,pid:STAT_PID,src:STAT_SRC,d:x.d||0,subj:String(x.subj||(typeof subjOf==='function'?subjOf():'')).slice(0,10),cls:String(x.cls||(hero&&hero.cls)||'').slice(0,20)};if(x.ans)o.ans=String(x.ans).slice(0,10);if(x.role)o.role=String(x.role).slice(0,10);fsAdd('stats',o).catch(()=>{});}catch(e){}}
+const SHOWCASE=/[?&]showcase=1/.test(location.search);
+function stat(ev,x){x=x||{};if(SHOWCASE)return;try{const o={ev,pid:STAT_PID,src:STAT_SRC,d:x.d||0,subj:String(x.subj||(typeof subjOf==='function'?subjOf():'')).slice(0,10),cls:String(x.cls||(hero&&hero.cls)||'').slice(0,20)};if(x.ans)o.ans=String(x.ans).slice(0,10);if(x.role)o.role=String(x.role).slice(0,10);fsAdd('stats',o).catch(()=>{});}catch(e){}}
 stat('open',{cls:''});
 {const _nh=newHero;newHero=function(n,c){const r=_nh(n,c);try{STAT_CLR[hero.id]=0;stat('hero',{cls:c});}catch(e){}return r;};}
 const STAT_CLR={};
@@ -6255,6 +6256,19 @@ setTimeout(()=>{if(location.hash==='#feedback')openFeedback();else if(location.h
 $('.tbtns').insertAdjacentHTML('beforeend','<button class="btn gold" id="bFull">⭐ Full Version</button>');$('#bFull').onclick=()=>openFull('title');
 {const _dbV=demoBox;demoBox=function(t,b){_dbV(t,b);const row=document.querySelector('#modalBody .row:last-child');if(row&&!$('#dmFull')){row.insertAdjacentHTML('afterbegin','<button class="btn gold" id="dmFull">⭐ Get the Full Version</button>');$('#dmFull').onclick=()=>openFull('popup');}};}
 {const _ofS=openFeedback;openFeedback=function(){_ofS();const g=$('#fbGo');if(g){const o=g.onclick;g.onclick=async function(){await o.apply(this,arguments);if(document.querySelector('#fbOk'))stat('feedback',{});};}};}
+
+// ===================== SHOWCASE MODE (auto-playing preview for the landing page; saves nothing) =====================
+if(SHOWCASE){try{store.set=function(){};settings.sound=false;settings.music=false;settings.cutscenes=false;}catch(e){}
+ document.querySelectorAll('body>div').forEach(d=>{if(d.textContent==='FREE DEMO')d.remove();});
+ const st=document.createElement('style');st.textContent='#toast,.toast,#toasts{display:none!important}';document.head.appendChild(st);
+ setTimeout(()=>{try{newHero('Nova','warrior');hero.level=6;hero.gold=880;hero.cleared=[1,2];hero.unlocked=3;hero.potions=3;enterDungeon(3);try{cutClose()}catch(e){}try{closeModal()}catch(e){}}catch(e){}
+  let n=0;setInterval(()=>{try{try{cutClose()}catch(e){}if(modalOpen)closeModal();
+   if(!combatOpen||!Cb){let e=D&&D.enemies.find(x=>!x.boss&&x.hp>0);if(n%4===3)e=D.enemies.find(x=>x.boss&&x.hp>0)||e;if(!e){enterDungeon(3);e=D.enemies.find(x=>x.hp>0);}e.hp=e.maxHp;n++;startCombat(e);return;}
+   const nb=()=>[...document.querySelectorAll('#cFeed button:not([disabled])')].find(b=>/▶|Next|Continue|Camp|Keep/i.test(b.textContent)&&!/Camp/i.test(b.textContent));
+   if(Cb.e&&Cb.e.hp<=0){const b=nb();if(b)b.click();else{combatOpen=false;$('#combat').classList.remove('on');Cb=null;}return;}
+   if(Cb.locked){const b=nb();if(b)b.click();return;}
+   if(Cb.readyAt&&Cb.readyAt>Date.now())return;
+   hero.hp=maxHP();answer(Cb.order.indexOf(0));}catch(e){}},2600);},600);}
 </script>
 </body>
 </html>
