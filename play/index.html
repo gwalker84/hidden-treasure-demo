@@ -6594,6 +6594,349 @@ const ES_PAT2=[
  return s;};}
 if(LANG==='es')setTimeout(()=>esWalk(document.body),0);
 
+
+// ===================== V39: MORE QUESTION TYPES — ✔/✖ True or False · ✍️ Type It · 🔗 Matching · 🔢 Put in Order =====================
+// Every new type is built on top of a normal question, so stats, standards, reviews and Report Cards keep working.
+// If anything removes answer choices (50/50, 3-choice support, Time Warp, pet hint, bribe), the question quietly turns back into multiple choice.
+const KX_L=(en,es)=>(typeof LANG!=='undefined'&&LANG==='es')?es:en;
+const KX_NAMES={mc:['Multiple choice','Opción múltiple'],tf:['True or False','Verdadero o falso'],type:['Type It','Escríbelo'],match:['Matching','Emparejar'],order:['Put in Order','Ordenar']};
+const kxName=k=>KX_L(...(KX_NAMES[k]||KX_NAMES.mc));
+const KX_ICON={mc:'🔤',tf:'✔️',type:'✍️',match:'🔗',order:'🔢'};
+function kxCfg(){const d={rate:'some',tf:true,type:true,match:true,order:true};let c=null;try{c=typeof classCfg==='function'?classCfg():null;}catch(e){}return Object.assign(d,settings.qmix||{},(c&&c.qmix)||{});}
+// ---------- "Put in Order" bank: [subject, grade, topic, prompt, items in the correct order, explanation] ----------
+const KX_ORDER=[
+ ['sci','5','Ecosystems','Put this food chain in order, starting with where the energy comes from.',['Sun','Grass','Grasshopper','Frog','Hawk'],'Energy starts with the Sun, moves to a producer (grass), and then to each consumer that eats the one before it.'],
+ ['sci','5','Ecosystems','Order these from smallest to largest.',['One organism','Population','Community','Ecosystem'],'One organism → a population (one kind) → a community (all the living things) → an ecosystem (living + nonliving).'],
+ ['sci','5','Plants','Put the life cycle of a flowering plant in order.',['Seed','Seedling (sprout)','Adult plant with flowers','Fruit with new seeds'],'A seed sprouts, grows into an adult plant, flowers, and then makes fruit with new seeds.'],
+ ['sci','5','Earth & Space','Order these planets from closest to the Sun to farthest.',['Mercury','Venus','Earth','Mars'],'The inner planets in order are Mercury, Venus, Earth, Mars.'],
+ ['sci','5','Earth & Space','Order these from smallest to largest.',['Moon','Earth','Sun','Milky Way galaxy'],'The Moon is smaller than Earth, the Sun is much bigger than Earth, and the Sun is just one star in the Milky Way.'],
+ ['sci','5','Earth & Space','Put the Moon phases in order, starting with the new moon.',['New moon','First quarter','Full moon','Third quarter'],'New → first quarter → full → third quarter, then back to new — about 29.5 days.'],
+ ['sci','5','Matter','Order these from smallest to largest.',['Sugar particle','Grain of sugar','Sugar cube','Bag of sugar'],'A grain of sugar is made of countless particles too small to see.'],
+ ['sci','5','Earth Systems','Put the water cycle in order, starting with the ocean.',['Water evaporates from the ocean','Water vapor condenses into clouds','Rain or snow falls','Water runs off into rivers and back to the ocean'],'Evaporation → condensation → precipitation → runoff/collection.'],
+ ["sci",'5',"Earth's Water","Order from MOST of Earth's water to LEAST.",['Oceans','Glaciers and ice caps','Groundwater','Lakes and rivers'],'About 97% is in the oceans. Most fresh water is frozen in ice, then groundwater; lakes and rivers hold very little.'],
+ ['sci','6','Cells','Order the levels of organization from smallest to largest.',['Cell','Tissue','Organ','Organ system','Organism'],'Cells form tissues, tissues form organs, organs work together in systems, and systems make up an organism.'],
+ ['sci','6','Particles & States','Order from particles moving SLOWEST to FASTEST.',['Ice (solid)','Liquid water','Water vapor (gas)'],'Adding thermal energy makes particles move faster: solid → liquid → gas.'],
+ ['sci','6','Thermal Energy','Order these from coldest to hottest.',['Ice cube','Cold tap water','Room-temperature air','Boiling water'],'Ice is about 0 °C, tap water about 10 °C, a room about 21 °C, and boiling water 100 °C.'],
+ ['sci','6','Waves','Order from LONGEST wavelength to SHORTEST.',['Radio waves','Microwaves','Visible light','X-rays'],'Radio waves are longest; X-rays are among the shortest.'],
+ ['sci','6','Body Systems','Put the path of food through the digestive system in order.',['Mouth','Esophagus','Stomach','Small intestine','Large intestine'],'Food is chewed in the mouth, travels down the esophagus, is churned in the stomach, nutrients are absorbed in the small intestine, and water in the large intestine.'],
+ ['sci','6','Body Systems','Order the path air takes into your lungs.',['Nose or mouth','Trachea (windpipe)','Bronchi','Alveoli (air sacs)'],'Air enters the nose or mouth, goes down the trachea, splits into the bronchi, and ends in tiny alveoli.'],
+ ['sci','6','Weather & Water Cycle','Put these steps in order.',['The Sun heats water','Water evaporates','Water vapor condenses into clouds','Precipitation falls'],'The Sun powers the water cycle: evaporation → condensation → precipitation.'],
+ ['sci','6','Climate','Order these climate zones from warmest to coldest.',['Tropical (near the equator)','Temperate (middle latitudes)','Polar (near the poles)'],'Places near the equator get the most direct sunlight; the poles get the least.'],
+ ['sci','78','Atoms','Order these from smallest to largest.',['Proton','Atom','Molecule','Cell'],'Protons are inside atoms, atoms bond into molecules, and a cell is made of huge numbers of molecules.'],
+ ['sci','78','Genetics & Heredity','Order these from largest to smallest.',['Cell','Nucleus','Chromosome','Gene'],'The nucleus is inside the cell, chromosomes are inside the nucleus, and genes are sections of a chromosome.'],
+ ['sci','78','Forces & Motion','A ball is thrown straight up. Put what happens in order.',['The ball leaves your hand moving up fast','Gravity slows the ball down','The ball stops for an instant at the top','Gravity pulls it back down faster and faster'],'Gravity acts the whole time — first slowing the ball, then speeding it up on the way down.'],
+ ['sci','78','Energy','Order the energy changes in a flashlight.',['Chemical energy in the battery','Electrical energy in the wires','Light energy from the bulb'],'The battery stores chemical energy, which becomes electrical energy, which becomes light (and some heat).'],
+ ['sci','78','Chemical Reactions','Baking soda and vinegar react in a sealed bag. Put the events in order.',['The reactants are mixed','Bonds break and atoms rearrange','A new gas (carbon dioxide) forms','The bag puffs up, but the total mass stays the same'],'Atoms rearrange into new substances, and mass is conserved in a closed system.'],
+ ['sci','78','Evolution & Fossils','Put the steps of fossil formation in order.',['An organism dies','It is quickly buried by sediment','The sediment hardens into rock over time','Minerals replace the remains, forming a fossil'],'Quick burial protects the remains; over long periods, minerals turn them into stone.'],
+ ["sci",'78',"Earth's Surface",'Put the steps that make sedimentary rock in order.',['Weathering breaks rock into pieces','Erosion carries the sediment away','Sediment is deposited in layers','Layers are pressed and cemented into rock'],'Weathering → erosion → deposition → compaction and cementation.'],
+ ['sci','78','Space','Order these from smallest to largest.',['Moon','Earth','Sun','Solar system','Milky Way galaxy'],'Each one fits inside the next: our solar system is one small part of the Milky Way.'],
+ ['sci','78','Waves','Order these waves from LOWEST energy to HIGHEST.',['Radio waves','Infrared','Visible light','Ultraviolet','Gamma rays'],'Shorter wavelength means higher frequency and more energy.'],
+ ['sci','78','Ecosystems','Put this ocean food chain in order.',['Sun','Phytoplankton','Zooplankton','Small fish','Shark'],'Phytoplankton are the producers; energy passes up to each consumer.'],
+ ['hist','5','Exploration','Put these events in order, earliest first.',['Vikings reach North America','Columbus reaches the Americas','Magellan\'s crew sails around the world','Jamestown is founded'],'About 1000 → 1492 → 1519–1522 → 1607.'],
+ ['hist','5','Thirteen Colonies','Put these events in order, earliest first.',['Jamestown is founded','Pilgrims land at Plymouth','Massachusetts Bay Colony is founded','Georgia is founded'],'1607 → 1620 → 1630 → 1732.'],
+ ['hist','5','Road to Revolution','Put these events in order, earliest first.',['Stamp Act','Boston Massacre','Boston Tea Party','Battles of Lexington and Concord'],'1765 → 1770 → 1773 → 1775.'],
+ ['hist','5','American Revolution','Put these events in order, earliest first.',['Battles of Lexington and Concord','Declaration of Independence is signed','Battle of Saratoga','British surrender at Yorktown'],'1775 → 1776 → 1777 → 1781.'],
+ ['hist','5','Constitution & Government','Put these in order, earliest first.',['Declaration of Independence','Articles of Confederation','Constitutional Convention','Bill of Rights is added'],'1776 → Articles (ratified 1781) → Convention 1787 → Bill of Rights 1791.'],
+ ['hist','5','Map Skills','Order these from smallest to largest.',['City','State','Country','Continent'],'A city is in a state, a state is in a country, and a country is on a continent.'],
+ ['hist','6','Map Skills','Order these from smallest to largest.',['Town','State or province','Country','Continent'],'Each place fits inside the next one.'],
+ ['hist','6','Physical Geography','Order these continents from LARGEST to SMALLEST in area.',['Asia','Africa','North America','South America'],'Asia is the largest continent, then Africa, North America, and South America.'],
+ ['hist','6','North America','Order these countries from NORTH to SOUTH.',['Canada','United States','Mexico','Guatemala'],'Canada is farthest north; Guatemala is in Central America.'],
+ ['hist','6','Central America & Caribbean','Order these countries from NORTH to SOUTH.',['Belize','Honduras','Costa Rica','Panama'],'Panama is the southernmost country in Central America, next to Colombia.'],
+ ['hist','6','South America','Order these countries from LARGEST to SMALLEST in area.',['Brazil','Argentina','Peru','Chile'],'Brazil is by far the largest; Chile is long and thin, so its area is smaller.'],
+ ['hist','6','Human Geography & Economics','Put the steps of making and selling chocolate in order.',['Farmers grow cacao','Beans are shipped to a factory','The factory makes chocolate bars','Stores sell the chocolate'],'Raw materials (primary) → manufacturing (secondary) → selling and services (tertiary).'],
+ ['hist','7','Europe','Order these countries from NORTH to SOUTH.',['Norway','Germany','Italy','Malta'],'Norway is in Scandinavia; Malta is a small island south of Italy.'],
+ ['hist','7','World Cultures & Economies','Order these continents by population, MOST to LEAST.',['Asia','Africa','Europe','Oceania'],'Asia has well over half of all people on Earth; Oceania has the fewest of these.'],
+ ['hist','7','South & East Asia','Order these countries from WEST to EAST.',['India','China','South Korea','Japan'],'India is farthest west; Japan is an island country farthest east.'],
+ ['hist','7','Southwest Asia','Order these countries from WEST to EAST.',['Turkey','Iraq','Iran','Afghanistan'],'Turkey borders Europe; Afghanistan is farthest east of these.'],
+ ['hist','7','Oceania & Antarctica','Order these from LARGEST to SMALLEST in area.',['Antarctica','Australia','New Zealand','Fiji'],'Antarctica is almost twice the size of Australia; Fiji is a small island nation.'],
+ ['hist','8','Revolution & Constitution','Put these events in order, earliest first.',['Declaration of Independence','Articles of Confederation are ratified','Shays\' Rebellion','The Constitution is written'],'1776 → 1781 → 1786–87 → 1787. Shays\' Rebellion showed the Articles were too weak.'],
+ ['hist','8','Early Republic','Put these events in order, earliest first.',['George Washington becomes president','Louisiana Purchase','War of 1812 begins','Monroe Doctrine'],'1789 → 1803 → 1812 → 1823.'],
+ ['hist','8','Westward Expansion','Put these events in order, earliest first.',['Louisiana Purchase','Lewis and Clark expedition','Texas wins independence from Mexico','California Gold Rush'],'1803 → 1804–1806 → 1836 → 1848–1849.'],
+ ['hist','8','Indian Removal','Put these events in order, earliest first.',['Indian Removal Act is passed','Worcester v. Georgia decision','Treaty of New Echota','Trail of Tears (Cherokee removal)'],'1830 → 1832 → 1835 → 1838–1839.'],
+ ['hist','8','Sectionalism & Civil War','Put these events in order, earliest first.',['Missouri Compromise','Kansas-Nebraska Act','Dred Scott decision','Abraham Lincoln is elected president'],'1820 → 1854 → 1857 → 1860.'],
+ ['hist','8','Sectionalism & Civil War','Put these Civil War events in order, earliest first.',['Attack on Fort Sumter','Emancipation Proclamation','Battle of Gettysburg','Lee surrenders at Appomattox'],'April 1861 → January 1863 → July 1863 → April 1865.'],
+ ['hist','8','Reconstruction','Put these events in order, earliest first.',['Lincoln is assassinated','13th Amendment is ratified','14th Amendment is ratified','15th Amendment is ratified'],'April 1865 → December 1865 → 1868 → 1870.']];
+['5','6','7','8'].forEach(g=>{
+ KX_ORDER.push(['ela',g,'Literary Elements','Put the parts of a plot in order.',['Exposition','Rising action','Climax','Falling action','Resolution'],'Exposition introduces the story, tension builds in the rising action, the climax is the turning point, then the falling action leads to the resolution.']);
+ [['warm','hot','scorching'],['like','love','adore'],['chilly','cold','freezing'],['upset','angry','furious'],['glad','happy','overjoyed'],['big','huge','gigantic']].slice(0,6).forEach(w=>KX_ORDER.push(['ela',g,'Context Clues & Connotation','Order these words from WEAKEST to STRONGEST meaning.',w,'These words have similar meanings but different strengths (shades of meaning): "'+w.join('" → "')+'".']));
+ KX_ORDER.push(['ela',g,'Text Structure','Put these sentences in time order.',['First, Maria gathered her paint and brushes.','Next, she mixed the colors she needed.','Then, she painted the old fence.','Finally, she washed her brushes.'],'Signal words like first, next, then, and finally show chronological (time-order) structure.']);
+ KX_ORDER.push(['ela',g,'Text Structure','Put these sentences in time order.',['Before the storm, the farmers covered their crops.','During the storm, heavy rain flooded the road.','After the storm, neighbors helped clear the branches.'],'Before, during, and after are signal words for chronological order.']);});
+// math "order" questions are made fresh every time from random numbers
+const kxR=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+function kxDistinct(n,gen){const out=[],seen=new Set();for(let i=0;i<200&&out.length<n;i++){const x=gen();if(!seen.has(x[0])&&!out.some(o=>Math.abs(o[1]-x[1])<1e-9)){seen.add(x[0]);out.push(x);}}return out.length===n?out:null;}
+const KX_MATH={
+ '5|Decimals & Place Value':()=>{const v=kxDistinct(4,()=>{const p=kxR(1,3),n=kxR(1,Math.pow(10,p)-1);const s=(n/Math.pow(10,p)).toFixed(p);return[s,+s];});return v&&['Order these decimals from LEAST to GREATEST.',v,'Line up the decimal points and compare place by place: tenths first, then hundredths, then thousandths.'];},
+ '5|Fractions & Decimals':()=>{const P=[['1/4',.25],['0.3',.3],['2/5',.4],['0.45',.45],['1/2',.5],['0.6',.6],['3/4',.75],['0.8',.8],['9/10',.9],['1/10',.1],['0.15',.15],['1/5',.2],['0.65',.65],['7/10',.7]];const v=kxDistinct(4,()=>P[kxR(0,P.length-1)]);return v&&['Order these numbers from LEAST to GREATEST.',v,'Change each fraction to a decimal (or each decimal to a fraction) so you can compare them the same way.'];},
+ '6|Integers':()=>{const v=kxDistinct(5,()=>{const n=kxR(-15,15);return[String(n).replace('-','−'),n];});return v&&['Order these integers from LEAST to GREATEST.',v,'On a number line, numbers to the left are smaller. A negative number with a bigger absolute value is LESS.'];},
+ '6|Exponents & Prime Factors':()=>{const P=[['2⁵',32],['3³',27],['5²',25],['4³',64],['2⁴',16],['10²',100],['3⁴',81],['6²',36],['2⁶',64],['7²',49],['9²',81],['2³',8]];const v=kxDistinct(4,()=>P[kxR(0,P.length-1)]);return v&&['Order these from LEAST to GREATEST value.',v,'Find each value first: for example 2⁵ = 2×2×2×2×2 = 32.'];},
+ '7|Rational Numbers':()=>{const P=[['−3/4',-.75],['−0.5',-.5],['−1/3',-1/3],['−0.2',-.2],['1/4',.25],['0.4',.4],['2/3',2/3],['−1.25',-1.25],['0.9',.9],['−0.6',-.6],['1/2',.5],['−2',-2]];const v=kxDistinct(4,()=>P[kxR(0,P.length-1)]);return v&&['Order these rational numbers from LEAST to GREATEST.',v,'Write each as a decimal. Negative numbers are less than zero, and the farther from zero, the smaller they are.'];},
+ '8|Scientific Notation':()=>{const v=kxDistinct(4,()=>{const m=kxR(11,98)/10,e=kxR(2,6);return[m.toFixed(1)+' × 10'+'⁰¹²³⁴⁵⁶⁷⁸⁹'[e],m*Math.pow(10,e)];});return v&&['Order these numbers from LEAST to GREATEST.',v,'Compare the powers of 10 first. If they are the same, compare the numbers in front.'];},
+ '8|Square Roots & Real Numbers':()=>{const P=[['π',Math.PI],['√10',Math.sqrt(10)],['13/4',3.25],['3.5',3.5],['√8',Math.sqrt(8)],['2.9',2.9],['√12',Math.sqrt(12)],['3.05',3.05],['√15',Math.sqrt(15)],['3.8',3.8],['11/3',11/3]];const v=kxDistinct(4,()=>P[kxR(0,P.length-1)]);return v&&['Order these numbers from LEAST to GREATEST.',v,'Estimate each one as a decimal: π ≈ 3.14, √10 ≈ 3.16, √8 ≈ 2.83, √12 ≈ 3.46, √15 ≈ 3.87.'];},
+ '7|Two-Step Equations':()=>{const a=kxR(2,6),x=kxR(2,9),b=kxR(1,12),c=a*x+b;return['Put the steps to solve '+a+'x + '+b+' = '+c+' in order.',[['Subtract '+b+' from both sides: '+a+'x = '+(c-b),1],['Divide both sides by '+a+': x = '+x,2],['Check: '+a+'('+x+') + '+b+' = '+c+' ✔',3]],'Undo the adding first (subtract), then undo the multiplying (divide), then check your answer.'];},
+ '8|Multi-Step Equations':()=>{const a=kxR(2,5),x=kxR(2,8),b=kxR(1,6),c=a*(x+b);return['Put the steps to solve '+a+'(x + '+b+') = '+c+' in order.',[['Distribute: '+a+'x + '+(a*b)+' = '+c,1],['Subtract '+(a*b)+' from both sides: '+a+'x = '+(c-a*b),2],['Divide both sides by '+a+': x = '+x,3]],'Distribute first, then undo the adding, then undo the multiplying.'];}};
+KX_MATH['6|Expressions & Equations']=()=>{const a=kxR(2,5),x=kxR(2,9),b=kxR(1,12),c=a*x+b;return['Put the steps to solve '+a+'x + '+b+' = '+c+' in order.',[['Subtract '+b+' from both sides: '+a+'x = '+(c-b),1],['Divide both sides by '+a+': x = '+x,2],['Check: '+a+' × '+x+' + '+b+' = '+c+' ✔',3]],'Undo the adding first, then undo the multiplying, then check.'];};
+// ---------- eligibility helpers ----------
+const kxBadAns=s=>/all of the above|none of the above|both [a-d]\b|neither|\ball of these\b/i.test(s);
+const kxNorm=s=>String(s||'').toLowerCase().replace(/[’']/g,"'").replace(/−/g,'-').replace(/^\s*(the|a|an)\s+/,'').replace(/[^a-z0-9.\/\-' ]/g,' ').replace(/\s+/g,' ').trim().replace(/\.$/,'');
+function kxLev(a,b){if(Math.abs(a.length-b.length)>2)return 9;const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length];}
+const kxNum=s=>{const s0=String(s).replace(/[−–]/g,'-').replace(/[$,]/g,'').replace(/^\s*[a-z]\s*=\s*/i,'').trim();let mm=s0.match(/^(-?)(\d+)\s+(\d+)\/(\d+)/);if(mm)return{v:(mm[1]?-1:1)*(+mm[2]+mm[3]/mm[4]),rest:s0.slice(mm[0].length).replace(/\s/g,'')};const t=s0.replace(/\s/g,'');let m=t.match(/^(-?\d+)\/(\d+)/);if(m)return{v:+m[1]/+m[2],rest:t.slice(m[0].length)};m=t.match(/^-?\d*\.?\d+/);if(m)return{v:+m[0],rest:t.slice(m[0].length)};return null;};
+function kxTypedOK(typed,ans,wrong){const a=kxNorm(ans),t=kxNorm(typed);if(!t)return false;if(t===a)return true;
+ const strip=s=>s.replace(/(es|s)$/,'');if(strip(t)===strip(a))return true;
+ {const gen=/ (system|energy|rock|rocks|river|ocean|sea|mountains|cell|cells|wall|membrane|layer|zone|plate|plates|force|waves?)$/;if(gen.test(a)&&strip(t)===strip(a.replace(gen,'')))return true;}
+ const na=kxNum(ans),nt=kxNum(typed);if(na&&nt&&Math.abs(na.v-nt.v)<1e-9){const r=kxNorm(nt.rest);return!r||kxNorm(na.rest).startsWith(r)||r.startsWith(kxNorm(na.rest));}
+ if(na)return false;
+ {const ws=a.split(' ');if(ws.length===2&&t.length>=4&&ws.includes(t)&&!(wrong||[]).some(w=>kxNorm(w).split(' ').includes(t)))return true;}
+ const L=a.replace(/ /g,'').length,dist=kxLev(t.replace(/ /g,''),a.replace(/ /g,''));return(L>=5&&dist<=1)||(L>=9&&dist<=2);}
+function kxTypeOK(q){const a=String(q.a[0]||'').trim();if(!a||kxBadAns(a))return false;const isM=q.subj==='math';if(a.split(/\s+/).length>(isM?3:2)||a.length>22)return false;if(/[()…:;×^√π]|\.\.\.|\.$|Quadrant|\bor\b/.test(a))return false;
+ if(/\bwrite\b|as a (percent|fraction|decimal|mixed)|simplest form|scientific notation|standard form|estimate|round/i.test(q.q))return false;
+ if(/which (of these|of the following|one|choice|statement|sentence|answer|example|option|detail|word|pair|best)|\bbest\b|most likely|\bNOT\b|\bEXCEPT\b|true\?|\bblank\b|_{2,}/i.test(q.q))return false;
+ if(q.subj==='ela'&&/Synonyms|Parts of Speech|Sentence Structure|Context Clues|Inference|Main Idea|Author|Active/.test(q.t||''))return false;
+ if(q.a.slice(1).some(w=>kxNorm(w)===kxNorm(a)))return false;return true;}
+function kxPoolTopics(){const s=new Set();try{buildPool().forEach(x=>{if(x&&x.t)s.add((x.subj||'sci')+'|'+x.g+'|'+x.t);});}catch(e){}return s;}
+function kxOrderFor(q){const subj=q.subj||'sci';if(!q.g||!q.t||q.subj==='oaap')return null;const pt=kxPoolTopics();
+ const mk=KX_MATH[q.g+'|'+q.t];if(subj==='math'){if(!mk)return null;const r=mk();if(!r)return null;return{t:q.t,g:q.g,subj,prompt:r[0],items:r[1].slice().sort((a,b)=>a[1]-b[1]).map(x=>x[0]),e:r[2],id:'kxo:m:'+q.g+':'+q.t};}
+ const c=KX_ORDER.map((r,i)=>[r,i]).filter(([r])=>r[0]===subj&&r[1]===q.g&&pt.has(subj+'|'+r[1]+'|'+r[2]));if(!c.length)return null;
+ const same=c.filter(([r])=>r[2]===q.t),src=same.length&&Math.random()<.75?same:c,[r,i]=src[Math.floor(Math.random()*src.length)];
+ return{t:r[2],g:r[1],subj,prompt:r[3],items:r[4].slice(),e:r[5],id:'kxo:'+i};}
+function kxMatchFor(q){const okQ=x=>x&&x.a&&x.a.length>=3&&x.q.length<=120&&String(x.a[0]).length<=48&&!kxBadAns(x.a[0])&&!/which (of these|of the following|choice|statement|answer|option)|\bNOT\b|\bEXCEPT\b/i.test(x.q);
+ if(!okQ(q))return null;let pool=[];try{pool=buildPool();}catch(e){}const used=new Set([kxNorm(q.a[0])]),pr=new Set([kxNorm(q.q)]);
+ const c=shuffle(pool.filter(x=>x!==q&&(x.subj||'sci')===(q.subj||'sci')&&x.t===q.t&&x.g===q.g&&okQ(x)));const out=[q];
+ for(const x of c){const a=kxNorm(x.a[0]),p=kxNorm(x.q);if(used.has(a)||pr.has(p))continue;if(out.some(o=>o.a.slice(1).some(w=>kxNorm(w)===a)||x.a.slice(1).some(w=>kxNorm(w)===kxNorm(o.a[0]))))continue;used.add(a);pr.add(p);out.push(x);if(out.length===3)break;}
+ return out.length===3?out:null;}
+// ---------- choose a type for each new question ----------
+function kxChoose(q){const c=kxCfg();if(c.rate==='off'||PARTY||!hero||!q||!q.a||q.a.length<4||q.subj==='oaap'||q.pic)return null;
+ try{if(typeof isOaap==='function'&&isOaap())return null;}catch(e){}
+ if(Cb&&Cb.removed&&Cb.removed.size)return null;
+ const p=c.rate==='lots'?.55:.3;if(Math.random()>=p)return null;
+ const opts=[];if(c.tf&&!kxBadAns(q.a[0]))opts.push(['tf',1]);if(c.type&&kxTypeOK(q))opts.push(['type',1.2]);if(c.match)opts.push(['match',1]);if(c.order)opts.push(['order',.9]);
+ while(opts.length){let tot=opts.reduce((s,o)=>s+o[1],0),r=Math.random()*tot,k=opts[0][0];for(const o of opts){r-=o[1];if(r<=0){k=o[0];break;}}
+  if(k==='tf'){const show=Math.random()<.5?0:q.a.slice(1).map((_,i)=>i+1).filter(i=>!kxBadAns(q.a[i]))[Math.floor(Math.random()*3)];if(show!=null)return{k:'tf',show};}
+  else if(k==='type')return{k:'type'};
+  else if(k==='match'){const m=kxMatchFor(q);if(m){const left=shuffle(m.map((x,i)=>i)),right=shuffle(m.map((x,i)=>i));return{k:'match',qs:m,left,right,pairs:{},sel:null};}}
+  else if(k==='order'){const o=kxOrderFor(q);if(o&&o.items.length>=3){let cur;for(let i=0;i<20;i++){cur=shuffle(o.items.map((_,i)=>i));if(cur.some((v,i)=>v!==i))break;}return{k:'order',o,cur};}}
+  opts.splice(opts.findIndex(o=>o[0]===k),1);}
+ return null;}
+// order questions get their own question so they count toward the right topic/standard
+function kxOrderQ(o){const wrong=[];const it=o.items,n=it.length;const sw=(a,i,j)=>{const b=a.slice();[b[i],b[j]]=[b[j],b[i]];return b;};
+ const base=it.map((_,i)=>i),cand=[sw(base,0,1),sw(base,n-2,n-1),base.slice().reverse(),sw(base,0,n-1),sw(base,1,2)];cand.forEach(c=>{const s=c.map(i=>it[i]).join(' → ');if(c.some((v,i)=>v!==i)&&!wrong.includes(s)&&wrong.length<3)wrong.push(s);});
+ return{g:o.g,t:o.t,subj:o.subj==='sci'?undefined:o.subj,q:o.prompt,a:[it.join(' → ')].concat(wrong),e:o.e,id:o.id};}
+{const _nqK=nextQuestion;nextQuestion=function(pre){if(Cb){Cb.kx=null;Cb.kxDone=null;Cb.kxNote='';}_nqK.apply(this,arguments);try{if(!Cb||!Cb.q||Cb.locked)return;const kx=kxChoose(Cb.q);if(!kx)return;
+  if(kx.k==='order'){const nq=kxOrderQ(kx.o);if(nq.a.length<4){return;}const oldQ=Cb.q;Cb.q=nq;Cb.order=[0,1,2,3];if(typeof QT!=='undefined'&&QT&&QT.q===oldQ)QT.q=nq;$('#cQ').textContent=nq.q;const tp=$('#cTopic');if(tp)tp.textContent='🔢 '+(nq.t||'');}
+  Cb.kx=kx;if(typeof QT!=='undefined'&&QT&&QT.q===Cb.q&&kx.k!=='tf')QT.left+=10;
+  const tp=$('#cTopic');if(tp&&kx.k!=='order')tp.textContent=KX_ICON[kx.k]+' '+kxName(kx.k)+' · '+tp.textContent;
+  renderCombat();}catch(e){console.warn('kx',e);if(Cb)Cb.kx=null;}};}
+// ---------- drawing ----------
+(function(){const st=document.createElement('style');st.textContent=`
+.kx{grid-column:1/-1;display:flex;flex-direction:column;gap:9px}
+.kxLbl{font-weight:900;color:#ffd84a;font-size:15px;text-align:center}
+.kxStmt{background:#120f19;border:2px dashed #5b4b80;border-radius:11px;padding:12px;font-size:18px;font-weight:800;text-align:center}
+.kxRow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.kxIn{width:100%;font:inherit;font-size:20px;font-weight:800;padding:12px;border-radius:11px;border:2px solid #5b4b80;background:#120f19;color:var(--text);box-sizing:border-box}
+.kxIn:focus{outline:3px solid #ffd84a;outline-offset:1px}
+.kxCols{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:560px){.kxCols{grid-template-columns:1fr}}
+.kxCol{display:flex;flex-direction:column;gap:7px}.kxCol h4{margin:0;font-size:13px;color:#b9a9e6;text-transform:uppercase;letter-spacing:.05em}
+.kxB{display:flex;gap:8px;align-items:center;text-align:left;background:linear-gradient(#2e2645,#221b35);border:2px solid #5b4b80;color:var(--text);border-radius:10px;padding:9px 10px;font:inherit;font-size:15px;font-weight:800;cursor:pointer;min-height:48px}
+.kxB:hover{border-color:#8f7bd0}.kxB.sel{border-color:#ffd84a;box-shadow:0 0 0 2px #ffd84a inset}
+.kxB .kxTag{flex:none;min-width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#3a3150;font-size:14px}
+.kxB.pair .kxTag{color:#120f19}
+.kxP0 .kxTag{background:#7be38b!important}.kxP1 .kxTag{background:#6fc6ff!important}.kxP2 .kxTag{background:#ffb35c!important}
+.kxP0{border-color:#7be38b}.kxP1{border-color:#6fc6ff}.kxP2{border-color:#ffb35c}
+.kxO{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.kxO li{display:flex;align-items:center;gap:8px;background:linear-gradient(#2e2645,#221b35);border:2px solid #5b4b80;border-radius:10px;padding:6px 8px;font-weight:800;font-size:15px}
+.kxO li .kxNum{flex:none;width:28px;height:28px;border-radius:50%;background:#ffd84a;color:#120f19;display:flex;align-items:center;justify-content:center;font-weight:900}
+.kxO li .kxTxt{flex:1}.kxO li button{flex:none;width:40px;height:40px;border-radius:8px;border:2px solid #5b4b80;background:#120f19;color:var(--text);font-size:18px;cursor:pointer}
+.kxO li button:disabled{opacity:.3;cursor:default}.kxO li.moved{animation:kxPop .25s}
+@keyframes kxPop{from{transform:scale(1.03);border-color:#ffd84a}to{transform:none}}
+.kxGo{align-self:center;min-width:200px}
+.kxAlt{align-self:center;background:none;border:none;color:#b9a9e6;text-decoration:underline;font:inherit;font-size:14px;cursor:pointer;padding:4px}
+.kxNote{background:#120f19;border:1px solid #3a3150;border-radius:10px;padding:8px 10px;margin:6px 0;font-size:14px;text-align:left}
+.kxNote ol,.kxNote ul{margin:4px 0 0 18px;padding:0}
+#cAns.arming .kx button,#cAns.arming .kx input{opacity:.4;pointer-events:none;filter:grayscale(.6)}
+body.a11y-contrast .kxB,body.a11y-contrast .kxO li,body.a11y-contrast .kxStmt,body.a11y-contrast .kxIn{background:#000!important;border-color:#fff!important;color:#fff!important}`;document.head.appendChild(st);})();
+function kxRender(){const kx=Cb.kx,q=Cb.q,box=$('#cAns');if(!box)return;let h='';
+ if(kx.k==='tf'){h=`<div class="kx" data-noes><div class="kxLbl">${KX_L('Is this the right answer?','¿Es esta la respuesta correcta?')}</div><div class="kxStmt">${esc(q.a[kx.show])}</div>
+  <div class="kxRow"><button class="ans" data-tf="1"><b>1</b>✔ ${KX_L('True','Verdadero')}</button><button class="ans" data-tf="0"><b>2</b>✖ ${KX_L('False','Falso')}</button></div></div>`;}
+ else if(kx.k==='type'){h=`<div class="kx"><label class="kxLbl" for="kxIn">✍️ ${KX_L('Type your answer','Escribe tu respuesta')}</label>
+  <input id="kxIn" class="kxIn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="60" aria-describedby="kxTip">
+  <button class="btn kxGo" id="kxGo">${KX_L('Check','Revisar')} ✔</button><div class="mini" id="kxTip" style="text-align:center">${KX_L('Small spelling mistakes are OK. +5 gold for getting it without choices!','Los errores pequeños de ortografía están bien. ¡+5 de oro si lo logras sin opciones!')}</div>
+  <button class="kxAlt" id="kxAlt">💡 ${KX_L('Show the answer choices instead','Mostrar las opciones de respuesta')}</button></div>`;}
+ else if(kx.k==='match'){const done=Object.keys(kx.pairs).length,slot=l=>kx.left.indexOf(l);
+  const rOwner=r=>{const e=Object.entries(kx.pairs).find(([l,rr])=>rr===r);return e?+e[0]:null;};
+  h=`<div class="kx"><div class="kxLbl">🔗 ${KX_L('Tap a question, then tap its answer.','Toca una pregunta y luego su respuesta.')}</div><div class="kxCols">
+  <div class="kxCol" data-noes><h4>${KX_L('Questions','Preguntas')}</h4>${kx.left.map((l,n)=>{const p=kx.pairs[l]!=null;const ci=p?slot(l):-1;return`<button class="kxB${kx.sel===l?' sel':''}${p?' pair kxP'+ci:''}" data-kl="${l}" aria-pressed="${kx.sel===l}"><span class="kxTag">${n+1}</span><span>${esc(kx.qs[l].q)}</span></button>`;}).join('')}</div>
+  <div class="kxCol" data-noes><h4>${KX_L('Answers','Respuestas')}</h4>${kx.right.map((r,n)=>{const o=rOwner(r);const ci=o!=null?slot(o):-1;return`<button class="kxB${o!=null?' pair kxP'+ci:''}" data-kr="${r}" aria-label="${esc(kx.qs[r].a[0])}${o!=null?' — '+KX_L('matched to question','emparejada con la pregunta')+' '+(kx.left.indexOf(o)+1):''}"><span class="kxTag">${o!=null?(kx.left.indexOf(o)+1):'ABC'[n]}</span><span>${esc(kx.qs[r].a[0])}</span></button>`;}).join('')}</div></div>
+  <button class="btn kxGo" id="kxGo" ${done<kx.qs.length?'disabled':''}>${KX_L('Check matches','Revisar')} ✔ <span class="mini">(${done}/${kx.qs.length})</span></button></div>`;}
+ else if(kx.k==='order'){const it=kx.o.items,n=kx.cur.length;h=`<div class="kx"><div class="kxLbl">🔢 ${KX_L('Use ▲ ▼ to put these in order (1 = first).','Usa ▲ ▼ para ponerlos en orden (1 = primero).')}</div>
+  <ol class="kxO" data-noes>${kx.cur.map((ix,p)=>`<li${kx.moved===p?' class="moved"':''}><span class="kxNum">${p+1}</span><span class="kxTxt">${esc(it[ix])}</span><button data-ku="${p}" ${p===0?'disabled':''} aria-label="${KX_L('Move up','Subir')}: ${esc(it[ix])}">▲</button><button data-kd="${p}" ${p===n-1?'disabled':''} aria-label="${KX_L('Move down','Bajar')}: ${esc(it[ix])}">▼</button></li>`).join('')}</ol>
+  <button class="btn kxGo" id="kxGo">${KX_L('Check order','Revisar orden')} ✔</button></div>`;}
+ box.innerHTML=h;const cq=$('#cQ');if(cq)cq.textContent=kx.k==='match'?KX_L('Match each question to its answer.','Empareja cada pregunta con su respuesta.'):Cb.q.q;kxBind();}
+function kxBind(){const kx=Cb.kx,box=$('#cAns');
+ box.querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>kxTF(b.dataset.tf==='1'));
+ if(kx.k==='type'){const inp=$('#kxIn'),go=()=>{const v=inp.value.trim();if(!v){inp.focus();return;}kxResolve(kxTypedOK(v,Cb.q.a[0],Cb.q.a.slice(1)),'✍️ '+KX_L('You typed','Escribiste')+': “'+esc(v)+'”');};
+  $('#kxGo').onclick=go;inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go();}};$('#kxAlt').onclick=()=>{Cb.kx=null;Cb.kxSkip=1;renderCombat();setTimeout(()=>{const a=document.querySelector('#cAns .ans:not([disabled])');if(a)a.focus();},30);};
+  setTimeout(()=>{if(Cb&&Cb.kx===kx&&!box.classList.contains('arming'))inp.focus({preventScroll:true});},0);
+  if(box.classList.contains('arming')){const iv=setInterval(()=>{if(!Cb||Cb.kx!==kx){clearInterval(iv);return;}if(!box.classList.contains('arming')){clearInterval(iv);inp.focus({preventScroll:true});}},100);}}
+ if(kx.k==='match'){box.querySelectorAll('[data-kl]').forEach(b=>b.onclick=()=>{const l=+b.dataset.kl;kx.sel=kx.sel===l?null:l;kxRender();const nb=box.querySelector(`[data-kl="${l}"]`);nb&&nb.focus();});
+  box.querySelectorAll('[data-kr]').forEach(b=>b.onclick=()=>{const r=+b.dataset.kr;let l=kx.sel;
+   if(l==null){l=kx.left.find(x=>kx.pairs[x]==null);if(l==null){const o=Object.entries(kx.pairs).find(([x,rr])=>rr===r);if(o){delete kx.pairs[o[0]];kxRender();}return;}}
+   Object.keys(kx.pairs).forEach(x=>{if(kx.pairs[x]===r)delete kx.pairs[x];});kx.pairs[l]=r;kx.sel=kx.left.find(x=>kx.pairs[x]==null);if(kx.sel===undefined)kx.sel=null;snd&&snd('coin');kxRender();
+   const nb=box.querySelector(Object.keys(kx.pairs).length===kx.qs.length?'#kxGo':`[data-kl="${kx.sel}"]`);nb&&nb.focus();try{srSay(KX_L('Matched','Emparejado')+' '+Object.keys(kx.pairs).length+' / '+kx.qs.length);}catch(e){}});
+  $('#kxGo').onclick=()=>{const rows=kx.left.map(l=>({l,ok:kx.pairs[l]===l}));const ok=rows.every(r=>r.ok);
+   kxResolve(ok,'🔗 '+KX_L('Correct matches','Parejas correctas')+':<ul>'+kx.left.map(l=>`<li>${kx.pairs[l]===l?'✅':'❌'} ${esc(kx.qs[l].q)} → <b>${esc(kx.qs[l].a[0])}</b></li>`).join('')+'</ul>');};}
+ if(kx.k==='order'){const mv=(p,d)=>{const c=kx.cur,j=p+d;if(j<0||j>=c.length)return;[c[p],c[j]]=[c[j],c[p]];kx.moved=j;kxRender();const nb=box.querySelector(`[data-${d<0?'ku':'kd'}="${j}"]`)||box.querySelector(`[data-${d<0?'kd':'ku'}="${j}"]`);nb&&nb.focus();try{srSay(kx.o.items[c[j]]+' — '+KX_L('position','posición')+' '+(j+1));}catch(e){}};
+  box.querySelectorAll('[data-ku]').forEach(b=>b.onclick=()=>mv(+b.dataset.ku,-1));box.querySelectorAll('[data-kd]').forEach(b=>b.onclick=()=>mv(+b.dataset.kd,1));
+  $('#kxGo').onclick=()=>{const ok=kx.cur.every((v,i)=>v===i);const yours=kx.cur.map(i=>kx.o.items[i]);kxResolve(ok,ok?'':'🔢 '+KX_L('Your order','Tu orden')+': '+yours.map(esc).join(' → '));};}}
+function kxTF(saidTrue){const kx=Cb.kx;const isRight=kx.show===0,ok=saidTrue===isRight;
+ kxResolve(ok,ok?'':(isRight?KX_L('You said False, but that answer was correct.','Dijiste Falso, pero esa respuesta era correcta.'):KX_L('You said True, but “'+esc(Cb.q.a[kx.show])+'” is not right.','Dijiste Verdadero, pero “'+esc(Cb.q.a[kx.show])+'” no es correcta.')),ok?null:(isRight?null:kx.show));}
+function kxResolve(ok,note,wrongAi){if(!Cb||Cb.locked||!Cb.kx)return;if(Cb.readyAt&&Date.now()<Cb.readyAt)return;const kx0=Cb.kx,k=kx0.k;let i;
+ if(ok)i=Cb.order.indexOf(0);else{let ai=wrongAi!=null&&!Cb.removed.has(wrongAi)?wrongAi:Cb.order.find(x=>x!==0&&!Cb.removed.has(x));i=Cb.order.indexOf(ai);if(i<0)i=Cb.order.findIndex(x=>x!==0);}
+ Cb.kxDone=k;Cb.kx=null;if(Cb.buffs)Cb.buffs.retry=false;{const cq=$('#cQ');if(cq)cq.textContent=Cb.q.q;}
+ answer(i);
+ if(!Cb||!Cb.locked){if(Cb){Cb.kx=kx0;Cb.kxDone=null;}return;}
+ let extra='';if(ok&&k!=='tf'){hero.gold+=5;extra=`<div class="good">✨ +5 ${KX_L('gold bonus','de oro extra')} — ${KX_L('','¡')}${kxName(k)}!</div>`;try{saveHero();}catch(e){}}
+ if(note||extra){const f=$('#cFeed');if(f)f.insertAdjacentHTML('afterbegin',(note?`<div class="kxNote" data-noes>${note}</div>`:'')+extra);}}
+{const _rcK=renderCombat;renderCombat=function(){_rcK.apply(this,arguments);try{if(!Cb||!Cb.kx||Cb.locked)return;
+  if((Cb.removed&&Cb.removed.size)||(Cb.bribeQ&&Cb.bribeQ===Cb.q)){Cb.kx=null;const cq=$('#cQ');if(cq)cq.textContent=Cb.q.q;return;}
+  kxRender();}catch(e){console.warn('kx render',e);Cb.kx=null;}};}
+// number keys: 1 = True, 2 = False on True/False; ignored on the other new types so a stray key never answers by accident
+window.addEventListener('keydown',e=>{try{if(!combatOpen||!Cb||!Cb.kx||Cb.locked)return;const tag=(e.target.tagName||'').toLowerCase();if(tag==='input'||tag==='textarea')return;
+ if(['1','2','3','4'].includes(e.key)){e.preventDefault();e.stopImmediatePropagation();if(Cb.kx.k==='tf'&&(e.key==='1'||e.key==='2')&&!$('#cAns').classList.contains('arming'))kxTF(e.key==='1');return;}
+ if((e.key==='Enter'||e.key===' ')&&$('#cAns').contains(e.target))e.stopImmediatePropagation();}catch(err){}},true);
+// read aloud
+{const _rqK=readQ;readQ=function(){if(!Cb||!Cb.kx||Cb.locked)return _rqK.apply(this,arguments);const kx=Cb.kx,q=Cb.q;let t='';
+ if(kx.k==='tf')t=q.q+'. '+KX_L('Is this the right answer? ','¿Es esta la respuesta correcta? ')+q.a[kx.show]+'. '+KX_L('True or false?','¿Verdadero o falso?');
+ else if(kx.k==='type')t=q.q+'. '+KX_L('Type your answer.','Escribe tu respuesta.');
+ else if(kx.k==='match')t=KX_L('Match each question to its answer. ','Empareja cada pregunta con su respuesta. ')+kx.left.map((l,n)=>(n+1)+': '+kx.qs[l].q).join('. ')+'. '+KX_L('Answers: ','Respuestas: ')+kx.right.map((r,n)=>'ABC'[n]+': '+kx.qs[r].a[0]).join('. ');
+ else if(kx.k==='order')t=q.q+' '+kx.cur.map((i,p)=>(p+1)+': '+kx.o.items[i]).join('. ');
+ speak(t);};}
+// ---------- stats: per question type, and per standard per day (for the Class Dashboard) ----------
+const kxDay=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+{const _recK=record;record=function(ok){_recK.apply(this,arguments);try{if(!hero||PARTY)return;const s=hero.stats,k=(Cb&&Cb.kxDone)||'mc';s.qk=s.qk||{};const v=s.qk[k]=s.qk[k]||[0,0];v[1]++;if(ok)v[0]++;
+  const gk=gtKey(Cb&&Cb.q);if(gk){const day=kxDay();hero.gtd=hero.gtd||{};const d=hero.gtd[day]=hero.gtd[day]||{};const w=d[gk]=d[gk]||[0,0];w[1]++;if(ok)w[0]++;const ks=Object.keys(hero.gtd).sort();ks.slice(0,Math.max(0,ks.length-30)).forEach(x=>delete hero.gtd[x]);}
+  dashSend(false);}catch(e){}};}
+// ---------- send a small summary to the teacher (only for heroes that joined with a class code) ----------
+let dashLast=0,dashTimer=null;
+function dashSnap(){const s=hero.stats||{};return{t:Date.now(),code:hero.classCode,hero:hero.name,student:hero.studentName||hero.name,cls:hero.cls,lv:hero.level,subj:typeof subjOf==='function'?subjOf():'sci',a:[s.correct||0,s.total||0],gt:s.gt||{},gtd:hero.gtd||{},qk:s.qk||{}};}
+function dashSend(force){if(!hero||!hero.classCode||!CDB||!CUSR||PARTY)return;const now=Date.now();
+ if(!force&&now-dashLast<120000){if(!dashTimer)dashTimer=setTimeout(()=>{dashTimer=null;dashSend(true);},120000-(now-dashLast));return;}
+ dashLast=now;clearTimeout(dashTimer);dashTimer=null;const x=dashSnap(),hid=hero.id;
+ subPatch(b=>{b.dash=b.dash||{};Object.keys(b.dash).forEach(k=>{if(now-(b.dash[k].t||0)>200*864e5)delete b.dash[k];});b.dash[hid]=x;});}
+{const _gcK=goCamp;goCamp=function(){_gcK.apply(this,arguments);try{if(hero&&hero.classCode&&Date.now()-dashLast>15000)dashSend(true);}catch(e){}};}
+setTimeout(()=>{try{if(hero&&hero.classCode)dashSend(true);}catch(e){}},8000);
+
+// ===================== V39: 📊 CLASS DASHBOARD (Teacher Hub) =====================
+let dbCode='',dbData=null,dbBusy=false,dbIv=null,dbAt=0,dbRange=settings.dbRange||'7',dbGroup=settings.dbGroup||'',dbSort='low',dbOpenStu=null;
+const DB_GL={s:'🔬 Science',h:'📜 History & Geography',e:'📝 ELA',m:'➗ Math'};
+const dbGLabel=g=>{const [p,gr]=g.split(':');const gn=gr==='78'?'7th/8th':gr==='EE5'?'OAAP':(gr+(gr==='1'?'st':gr==='2'?'nd':gr==='3'?'rd':'th'));return(DB_GL[p]||p)+' · '+gn;};
+async function dbLoad(){dbBusy=true;const by={};try{const s=await withTimeout(CDB.collection('subs').get());s.docs.forEach(d=>{const b=d.data()||{};Object.values(b.dash||{}).forEach(x=>{if(!x||x.code!==dbCode)return;
+   const key=String(x.student||x.hero||'?').trim().toLowerCase();const r=by[key]=by[key]||{name:x.student||x.hero,heroes:[],t:0,lv:0,a:[0,0],gt:{},gtd:{},qk:{}};
+   r.heroes.push(x.hero);r.t=Math.max(r.t,x.t||0);r.lv=Math.max(r.lv,x.lv||0);r.a[0]+=(x.a||[])[0]||0;r.a[1]+=(x.a||[])[1]||0;
+   const add=(dst,src)=>Object.entries(src||{}).forEach(([k,v])=>{const w=dst[k]=dst[k]||[0,0];w[0]+=v[0]||0;w[1]+=v[1]||0;});
+   add(r.gt,x.gt);add(r.qk,x.qk);Object.entries(x.gtd||{}).forEach(([day,m])=>{r.gtd[day]=r.gtd[day]||{};add(r.gtd[day],m);});});});}catch(e){}
+ dbData={code:dbCode,rows:Object.values(by)};dbAt=Date.now();dbBusy=false;}
+function dbStats(r){if(dbRange==='all')return r.gt;const n=+dbRange,cut=new Date();cut.setHours(0,0,0,0);cut.setDate(cut.getDate()-(n-1));const out={};
+ Object.entries(r.gtd).forEach(([day,m])=>{const [y,mo,d]=day.split('-').map(Number);if(new Date(y,mo-1,d)>=cut)Object.entries(m).forEach(([k,v])=>{const w=out[k]=out[k]||[0,0];w[0]+=v[0];w[1]+=v[1];});});return out;}
+const dbPct=v=>v&&v[1]?Math.round(v[0]/v[1]*100):null;
+const dbCol=(v,min)=>{const p=dbPct(v);if(p==null||v[1]<(min||3))return['#2a2438','#8d84a3'];return p>=80?['#1f5a2e','#c9ffd3']:p>=60?['#6b5a12','#fff1b8']:['#6e1f24','#ffd0d0'];};
+const dbLocalMode=()=>!CDB&&(!(window.claude&&typeof window.claude.use==='function')||!!window.MWQ_NOFB);
+function dashTabHTML(){const cls=settings.classes||[];let h='';
+ if(dbLocalMode()){let all=[];try{all=allStudents();}catch(e){}
+  dbData={code:'(device)',rows:all.map(r=>({dts:r.dt||'',name:r.n||'?',heroes:[r.n||'?'],t:Date.parse(r.dt)||Date.now(),lv:r.l||1,a:r.a||[0,0],gt:r.gt||{},gtd:{},qk:{}}))};dbCode='(device)';dbRange='all';dbAt=0;
+  h=`<p id="dbLocal">How your students are doing on each standard, from heroes saved on this computer plus Report Card codes pasted on the 📋 Progress Report tab (all time).</p>`;
+  if(!dbData.rows.length)return h+'<div class="item" style="display:block"><b>No students yet.</b><div class="mini">Have students tap <b>📋 Report Card</b> at camp and send you their code, then paste the codes on the 📋 Progress Report tab.</div></div>';}
+ else{if(!cls.length)return'<p>Make a class code first on the 🏫 Class Codes tab. The dashboard shows students who joined with a class code.</p>';if(!CDB)return noCloudHTML('Class Dashboard');
+ if(!dbCode||!cls.some(c=>c.code===dbCode))dbCode=cls[0].code;
+ h=`<p>How your class is doing on each standard. Students' results update about every 2 minutes while they play.</p>
+ <div class="row wrap" style="gap:8px"><select id="dbCls" aria-label="Class">${cls.map(c=>`<option value="${c.code}" ${c.code===dbCode?'selected':''}>${esc(c.label||c.code)} (${c.code})</option>`).join('')}</select>
+ <select id="dbRange" aria-label="Time range"><option value="1" ${dbRange==='1'?'selected':''}>Today</option><option value="7" ${dbRange==='7'?'selected':''}>Last 7 days</option><option value="14" ${dbRange==='14'?'selected':''}>Last 14 days</option><option value="30" ${dbRange==='30'?'selected':''}>Last 30 days</option><option value="all" ${dbRange==='all'?'selected':''}>All time</option></select>
+ <button class="btn sm" id="dbRe">🔄 Refresh</button><span class="mini">${dbAt?'Updated '+new Date(dbAt).toLocaleTimeString():''}</span></div>`;
+ if(!dbData||dbData.code!==dbCode)return h+'<p class="mini">Loading…</p>';}
+ const rows=dbData.rows.map(r=>Object.assign({},r,{st:dbStats(r)}));
+ const groups={};rows.forEach(r=>Object.entries(r.st).forEach(([k,v])=>{const g=k.split('|')[0];groups[g]=(groups[g]||0)+v[1];}));
+ const gl=Object.keys(groups).sort((a,b)=>groups[b]-groups[a]);
+ if(!rows.length||!gl.length)return h+`<div class="item" style="display:block"><b>No results yet for this ${dbRange==='all'?'class':'time range'}.</b><div class="mini">Students show up here after they answer questions with the class code <b>${esc(dbCode)}</b> on their hero (heroes from before this update appear after their next battle).${dbRange!=='all'?' Try <b>All time</b>.':''}</div></div>`;
+ if(!gl.includes(dbGroup))dbGroup=gl[0];
+ h+=`<div class="row wrap" style="gap:6px;margin-top:6px">${gl.map(g=>`<button class="tab${g===dbGroup?' on':''}" data-dbg="${g}">${dbGLabel(g)}</button>`).join('')}</div>`;
+ const keys=[...new Set(rows.flatMap(r=>Object.keys(r.st).filter(k=>k.startsWith(dbGroup+'|'))))];
+ const tot=k=>rows.reduce((a,r)=>{const v=r.st[k];if(v){a[0]+=v[0];a[1]+=v[1];}return a;},[0,0]);
+ const cols=keys.map(k=>({k,t:k.split('|')[1],std:stdOf(k)||'',v:tot(k)})).sort((a,b)=>(dbPct(a.v)??101)-(dbPct(b.v)??101));
+ const stu=rows.map(r=>{const v=keys.reduce((a,k)=>{const x=r.st[k];if(x){a[0]+=x[0];a[1]+=x[1];}return a;},[0,0]);return Object.assign(r,{gv:v});}).filter(r=>r.gv[1]>0||dbRange==='all');
+ const now=Date.now();
+ if(dbSort==='low')stu.sort((a,b)=>(dbPct(a.gv)??101)-(dbPct(b.gv)??101));else if(dbSort==='name')stu.sort((a,b)=>String(a.name).localeCompare(String(b.name)));else stu.sort((a,b)=>b.gv[1]-a.gv[1]);
+ const all=stu.reduce((a,r)=>[a[0]+r.gv[0],a[1]+r.gv[1]],[0,0]),weakN=cols.filter(c=>c.v[1]>=10&&dbPct(c.v)<70).length;
+ const inactive=dbLocalMode()?[]:dbData.rows.filter(r=>now-r.t>7*864e5);
+ h+=`<div class="statrow"><span>👥 ${stu.length} student${stu.length===1?'':'s'}</span><span>❓ ${all[1]} answered</span><span>🎯 ${all[1]?dbPct(all)+'%':'—'} class accuracy</span><span>📏 ${weakN} standard${weakN===1?'':'s'} under 70%</span>${inactive.length?`<span>💤 ${inactive.length} not played in 7+ days</span>`:''}</div>`;
+ // needs attention + reteach
+ const strug=stu.filter(r=>r.gv[1]>=10&&dbPct(r.gv)<60);
+ const reteach=cols.filter(c=>c.v[1]>=10&&dbPct(c.v)<70).slice(0,3);
+ if(strug.length||reteach.length||inactive.length){h+='<div class="dbAttn">';
+  if(reteach.length)h+=`<div class="dbCard"><h4>🎯 Reteach first</h4>${reteach.map(c=>{const low=stu.filter(r=>r.st[c.k]&&r.st[c.k][1]>=3&&dbPct(r.st[c.k])<60).sort((a,b)=>dbPct(a.st[c.k])-dbPct(b.st[c.k]));
+    return`<div class="dbLine"><b>${esc(c.t)}</b> <span class="mini">${esc(c.std)}</span> — class <b>${dbPct(c.v)}%</b>${low.length?`<div class="mini">Struggling: ${low.slice(0,6).map(r=>esc(r.name)+' ('+dbPct(r.st[c.k])+'%)').join(', ')}${low.length>6?' +'+(low.length-6)+' more':''}</div>`:''}</div>`;}).join('')}<div class="mini">Tip: make a 🏁 Review Rush on these standards before a test.</div></div>`;
+  if(strug.length)h+=`<div class="dbCard"><h4>🙋 May need help</h4>${strug.slice(0,8).map(r=>`<div class="dbLine"><b>${esc(r.name)}</b> — ${dbPct(r.gv)}% on ${r.gv[1]} questions${(()=>{const w=keys.filter(k=>r.st[k]&&r.st[k][1]>=3).sort((a,b)=>dbPct(r.st[a])-dbPct(r.st[b]))[0];return w?`<div class="mini">Weakest: ${esc(w.split('|')[1])} (${dbPct(r.st[w])}%)</div>`:'';})()}</div>`).join('')}</div>`;
+  if(inactive.length)h+=`<div class="dbCard"><h4>💤 Haven't played in a week</h4><div class="mini">${inactive.slice(0,12).map(r=>esc(r.name)+' ('+Math.round((now-r.t)/864e5)+' days)').join(', ')}</div></div>`;
+  h+='</div>';}
+ // heatmap
+ h+=`<h3 style="margin-bottom:4px">Standards by student</h3><div class="row wrap" style="gap:8px;align-items:center"><label class="mini">Sort students: <select id="dbSort"><option value="low" ${dbSort==='low'?'selected':''}>Lowest accuracy first</option><option value="name" ${dbSort==='name'?'selected':''}>Name</option><option value="most" ${dbSort==='most'?'selected':''}>Most questions</option></select></label>
+  <span class="mini"><span class="dbKey" style="background:#1f5a2e"></span>80%+ <span class="dbKey" style="background:#6b5a12"></span>60–79% <span class="dbKey" style="background:#6e1f24"></span>under 60% <span class="dbKey" style="background:#2a2438"></span>fewer than 3 answers</span></div>
+ <div class="dbWrap" tabindex="0" aria-label="Standards by student table — scroll sideways for more standards"><table class="dbT"><thead><tr><th class="dbStu">Student</th><th>All</th>${cols.map(c=>`<th title="${esc(c.t)} ${esc(c.std)}"><div class="dbTh">${esc(c.t)}</div><div class="mini">${esc(c.std)}</div></th>`).join('')}</tr></thead><tbody>
+ ${stu.map(r=>{const [bg,fg]=dbCol(r.gv,5);const ago=now-r.t;return`<tr><th class="dbStu" scope="row"><button class="dbName" data-dbs="${esc(r.name)}">${esc(r.name)}</button><div class="mini">Lv ${r.lv} · ${r.dts!=null?esc(r.dts):ago<5*60000?'🟢 now':ago<864e5?Math.max(1,Math.round(ago/3600000))+'h ago':Math.round(ago/864e5)+'d ago'}</div></th>
+  <td style="background:${bg};color:${fg}"><b>${dbPct(r.gv)??'—'}${dbPct(r.gv)!=null?'%':''}</b><div class="mini">${r.gv[0]}/${r.gv[1]}</div></td>
+  ${cols.map(c=>{const v=r.st[c.k];const [b2,f2]=dbCol(v);return`<td style="background:${b2};color:${f2}" title="${esc(r.name)} · ${esc(c.t)}: ${v?v[0]+' of '+v[1]+' correct':'no answers'}">${v?`<b>${v[1]>=3?dbPct(v)+'%':'·'}</b><div class="mini">${v[0]}/${v[1]}</div>`:'<span class="mini">—</span>'}</td>`;}).join('')}</tr>`;}).join('')}
+ <tr class="dbClass"><th class="dbStu" scope="row">Class</th>${(()=>{const [bg,fg]=dbCol(all,5);return`<td style="background:${bg};color:${fg}"><b>${dbPct(all)??'—'}${dbPct(all)!=null?'%':''}</b><div class="mini">${all[0]}/${all[1]}</div></td>`;})()}${cols.map(c=>{const [b2,f2]=dbCol(c.v,5);return`<td style="background:${b2};color:${f2}"><b>${dbPct(c.v)??'—'}${dbPct(c.v)!=null?'%':''}</b><div class="mini">${c.v[0]}/${c.v[1]}</div></td>`;}).join('')}</tr></tbody></table></div>
+ <p class="mini">Columns are sorted weakest standard first. Tap a student's name for their details. Standard codes come from the 📏 Standards tab.</p>`;
+ // one student
+ const one=dbOpenStu&&stu.find(r=>r.name===dbOpenStu);
+ if(one){const ks=keys.filter(k=>one.st[k]).sort((a,b)=>dbPct(one.st[a])-dbPct(one.st[b]));
+  h+=`<div class="dbCard" id="dbOne"><h4>👤 ${esc(one.name)} <span class="mini">(${esc(one.heroes.join(', '))} · Lv ${one.lv})</span> <button class="btn sm" id="dbOneX" style="float:right">✖ Close</button></h4>
+  ${ks.map(k=>{const v=one.st[k],p=dbPct(v);return`<div class="dbBar"><span class="dbBarL">${esc(k.split('|')[1])} <span class="mini">${esc(stdOf(k)||'')}</span></span><span class="dbBarT"><span style="width:${Math.max(p,2)}%;background:${v[1]<3?'#6d6584':p>=80?'#4fc26a':p>=60?'#e0b93a':'#e0565e'}"></span></span><span class="dbBarN">${p}% <span class="mini">(${v[0]}/${v[1]})</span></span></div>`;}).join('')||'<p class="mini">No answers in this range.</p>'}</div>`;}
+ // question types
+ const qk={};dbData.rows.forEach(r=>Object.entries(r.qk||{}).forEach(([k,v])=>{const w=qk[k]=qk[k]||[0,0];w[0]+=v[0];w[1]+=v[1];}));
+ const qks=['mc','tf','type','match','order'].filter(k=>qk[k]&&qk[k][1]);
+ if(qks.length)h+=`<h3 style="margin-bottom:4px">Question types <span class="mini">(all time)</span></h3><div class="statrow">${qks.map(k=>`<span>${KX_ICON[k]} ${KX_NAMES[k][0]}: <b>${dbPct(qk[k])}%</b> <i class="mini" style="font-style:normal">of ${qk[k][1]}</i></span>`).join('')}</div><p class="mini">If Type It is much lower than multiple choice, students may be recognizing answers without really knowing them yet.</p>`;
+ h+=`<div class="row wrap" style="gap:8px"><button class="btn sm" id="dbCsv">⬇️ Download as spreadsheet (CSV)</button><button class="btn sm" id="dbPrint">🖨️ Print</button></div>`;
+ return h;}
+(function(){const st=document.createElement('style');st.textContent=`
+.dbWrap{overflow:auto;max-height:60vh;border:1px solid #3a3150;border-radius:10px;margin:6px 0}
+.dbT{border-collapse:separate;border-spacing:2px;font-size:13px;min-width:100%}
+.dbT th,.dbT td{padding:5px 6px;text-align:center;border-radius:6px;white-space:nowrap}
+.dbT thead th{position:sticky;top:0;background:#1a1525;z-index:2;vertical-align:bottom}
+.dbT .dbTh{white-space:normal;width:86px;line-height:1.15;font-size:12px}
+.dbT .dbStu{position:sticky;left:0;background:#1a1525;text-align:left;z-index:1;min-width:120px}
+.dbT thead .dbStu{z-index:3}.dbT .mini{font-size:11px;opacity:.85}
+.dbT tr.dbClass th,.dbT tr.dbClass td{border-top:2px solid #ffd84a}
+.dbName{background:none;border:none;color:#ffd84a;font:inherit;font-weight:900;cursor:pointer;padding:0;text-align:left;text-decoration:underline}
+.dbKey{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin:0 2px 0 8px}
+.dbAttn{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;margin:8px 0}
+.dbCard{background:#120f19;border:1px solid #3a3150;border-radius:10px;padding:10px;margin:6px 0}.dbCard h4{margin:0 0 6px;font-size:15px}
+.dbLine{margin:4px 0}.dbBar{display:grid;grid-template-columns:minmax(150px,240px) 1fr 96px;gap:8px;align-items:center;margin:4px 0;font-size:14px}
+.dbBarN{text-align:right;white-space:nowrap}@media(max-width:560px){.dbBar{grid-template-columns:1fr 70px 80px;font-size:13px}}.dbBarT{height:12px;background:#2a2438;border-radius:6px;overflow:hidden;display:block}.dbBarT span{display:block;height:100%}
+@media print{body *{visibility:hidden}#modalBody,#modalBody *{visibility:visible}#modalBody{position:absolute;left:0;top:0;width:100%;color:#000;background:#fff}.dbWrap{max-height:none;overflow:visible}.tabs,.row button,#dbOneX{display:none!important}}`;document.head.appendChild(st);})();
+function dbCsv(){const rows=dbData.rows.map(r=>Object.assign({},r,{st:dbStats(r)}));const keys=[...new Set(rows.flatMap(r=>Object.keys(r.st)))].sort();
+ const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';const head=['Student','Heroes','Level','Last played','Answered','Correct','Accuracy %'].concat(keys.map(k=>k.split('|')[1]+' ('+(stdOf(k)||dbGLabel(k.split('|')[0]))+')'));
+ const lines=[head.map(q).join(',')].concat(rows.map(r=>{const t=Object.values(r.st).reduce((a,v)=>[a[0]+v[0],a[1]+v[1]],[0,0]);return[r.name,r.heroes.join('; '),r.lv,new Date(r.t).toLocaleString(),t[1],t[0],dbPct(t)??''].concat(keys.map(k=>{const v=r.st[k];return v?dbPct(v)+'% ('+v[0]+'/'+v[1]+')':'';})).map(q).join(',');}));
+ return lines.join('\n');}
+function bindDash(){const local=!!$('#dbLocal');if(!$('#dbCls')&&!local)return;const re=async()=>{await dbLoad();if(hubTab==='h'&&modalOpen)openTeacher();};
+ if(!local){$('#dbCls').onchange=()=>{dbCode=$('#dbCls').value;dbData=null;dbOpenStu=null;openTeacher();};$('#dbRe').onclick=re;
+ $('#dbRange').onchange=()=>{dbRange=$('#dbRange').value;settings.dbRange=dbRange;store.set(SET_KEY,settings);openTeacher();};}
+ document.querySelectorAll('[data-dbg]').forEach(b=>b.onclick=()=>{dbGroup=b.dataset.dbg;settings.dbGroup=dbGroup;store.set(SET_KEY,settings);openTeacher();});
+ const so=$('#dbSort');if(so)so.onchange=()=>{dbSort=so.value;openTeacher();};
+ document.querySelectorAll('[data-dbs]').forEach(b=>b.onclick=()=>{dbOpenStu=b.dataset.dbs;openTeacher();setTimeout(()=>{const o=$('#dbOne');if(o)o.scrollIntoView({behavior:'smooth',block:'nearest'});},50);});
+ const ox=$('#dbOneX');if(ox)ox.onclick=()=>{dbOpenStu=null;openTeacher();};
+ const cv=$('#dbCsv');if(cv)cv.onclick=async()=>{const data=dbCsv(),fn='class-dashboard-'+dbCode+'-'+kxDay()+'.csv';const r=await saveFile(fn,data);if(r==='fallback'){try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'text/csv'}));a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),500);}catch(e){toast('Could not download here.');}}};
+ const pr=$('#dbPrint');if(pr)pr.onclick=()=>{try{window.print();}catch(e){}};
+ if(local)return;if((!dbData||dbData.code!==dbCode)&&!dbBusy)re();clearInterval(dbIv);dbIv=setInterval(()=>{if(!modalOpen||hubTab!=='h'||!$('#dbCls')){clearInterval(dbIv);return;}if(!dbBusy&&!dbOpenStu)re();},30000);}
+// teacher controls for the new question types (Options tab), and the dashboard tab
+function kxOptsHTML(){const c=Object.assign({rate:'some',tf:true,type:true,match:true,order:true},settings.qmix||{});return`<div class="dbCard" id="kxOpts"><h4>🧩 Question types</h4><p class="mini" style="margin:0 0 6px">Mix new kinds of questions into battles. They use the same questions and standards, and turn back into multiple choice whenever a student uses 50/50 or has the 3-choice support. Changes here are sent to students who joined with your class codes.</p>
+ <div class="row wrap" style="gap:10px"><label>How often: <select id="kxRate"><option value="off" ${c.rate==='off'?'selected':''}>Off (multiple choice only)</option><option value="some" ${c.rate==='some'?'selected':''}>Some (about 1 in 3)</option><option value="lots" ${c.rate==='lots'?'selected':''}>Lots (about half)</option></select></label></div>
+ <div class="row wrap" style="gap:12px;margin-top:6px">${[['tf','✔️ True or False'],['type','✍️ Type It (typed answer)'],['match','🔗 Matching (3 pairs)'],['order','🔢 Put in Order']].map(([k,l])=>`<label class="radio"><input type="checkbox" data-kxo="${k}" ${c[k]?'checked':''}> ${l}</label>`).join('')}</div><span class="mini" id="kxMsg"></span></div>`;}
+function bindKxOpts(){const save=()=>{const c=kxCfg();c.rate=$('#kxRate').value;document.querySelectorAll('[data-kxo]').forEach(i=>c[i.dataset.kxo]=i.checked);settings.qmix=c;store.set(SET_KEY,settings);const m=$('#kxMsg');if(m)m.textContent='✔ Saved on this device';
+  const cls=settings.classes||[];if(cls.length&&typeof classUpdate==='function'&&CDB){Promise.all(cls.map(x=>classUpdate(x.code,{qmix:Object.assign({},c)}).catch(()=>false))).then(r=>{if(m)m.textContent=r.some(Boolean)?'✔ Saved and sent to your class codes':'✔ Saved on this device';});}};
+ const r=$('#kxRate');if(r)r.onchange=save;document.querySelectorAll('[data-kxo]').forEach(i=>i.onchange=save);}
+{const _otD=openTeacher;openTeacher=function(){_otD.apply(this,arguments);try{const bar=document.querySelector('#modalBody [data-tab]');if(!bar)return;const par=bar.parentElement;
+ if(!par.querySelector('[data-tab="h"]')){const first=par.querySelector('[data-tab]');first.insertAdjacentHTML('beforebegin',`<button class="tab${hubTab==='h'?' on':''}" data-tab="h">📊 Class Dashboard</button>`);par.querySelector('[data-tab="h"]').onclick=()=>{try{saveHub(true);}catch(e){}hubTab='h';openTeacher();};}
+ if(hubTab==='h'){par.querySelectorAll('[data-tab]').forEach(t=>t.classList.toggle('on',t.dataset.tab==='h'));const hb=document.querySelector('.hubbody');if(hb){hb.innerHTML=dashTabHTML();bindDash();}}
+ if(hubTab==='o'||hubTab==='q'){const hb=document.querySelector('.hubbody');if(hb&&!$('#kxOpts')){hb.insertAdjacentHTML('afterbegin',kxOptsHTML());bindKxOpts();}}}catch(e){console.warn('dash tab',e);}};}
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
