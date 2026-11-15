@@ -4,6 +4,10 @@
 <meta name="description" content="A dungeon-crawler learning game for grades 5–8. Every attack is a question. Science, Social Studies, ELA and Math aligned to Oklahoma Academic Standards. Play the free demo.">
 <meta property="og:title" content="Hidden Treasure Quest — a learning dungeon quest for grades 5–8">
 <meta property="og:description" content="Every attack is a question. Play the free demo in your browser.">
+<meta property="og:type" content="website"><meta property="og:url" content="https://gwalker84.github.io/hidden-treasure-demo/">
+<meta property="og:image" content="https://gwalker84.github.io/hidden-treasure-demo/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Hidden Treasure Quest: six pixel-art heroes in armor sets above a Play the Free Demo button">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://gwalker84.github.io/hidden-treasure-demo/og-image.png">
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1d1830"><link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
@@ -56,18 +60,22 @@ footer{padding:30px 0 50px;color:var(--mute);font-size:14px;border-top:1px solid
 .plan ul{margin:0 0 18px;padding-left:20px;flex:1}.plan li{margin:4px 0;font-size:15px}
 .plan .btn{width:100%;text-align:center}
 .paynote{color:var(--mute);font-size:14px;margin:-8px 0 22px}
+.sets{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:22px}.sets figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 6px 10px;text-align:center}
+.sets canvas{width:96px;height:96px;max-width:100%;image-rendering:pixelated;display:block;margin:0 auto}.sets figcaption{font-weight:900;font-size:14px;margin-top:6px}
+.setsnote{color:var(--mute);font-size:14px;margin:10px 0 0}
+nav .links a.pr{display:inline}@media (max-width:820px){.sets{grid-template-columns:repeat(3,1fr)}}@media (max-width:480px){nav .logo .lt{display:none}nav .logo{font-size:18px}}
 @media (max-width:820px){.prices{grid-template-columns:1fr}.plan .was:empty{display:none}}
 </style></head><body>
-<nav><div class="wrap"><a class="logo px" href="#">💎 HIDDEN TREASURE QUEST</a><div class="links"><a class="hide" href="#how">How it works</a><a class="hide" href="#teachers">For teachers</a><a class="hide" href="#full">Pricing</a><a class="hide" href="guide.html">Quick-start guide</a><a class="btn gold sm" href="play/">▶ Play free</a></div></div></nav>
+<nav><div class="wrap"><a class="logo px" href="#" aria-label="Hidden Treasure Quest home">💎<span class="lt"> HIDDEN TREASURE QUEST</span></a><div class="links"><a class="hide" href="#how">How it works</a><a class="hide" href="#teachers">For teachers</a><a class="pr" href="#full">Pricing</a><a class="hide" href="guide.html">Quick-start guide</a><a class="btn gold sm" href="play/">▶ Play free</a></div></div></nav>
 
 <header class="hero"><div class="wrap grid">
  <div>
   <div class="kicker px">A LEARNING DUNGEON QUEST · GRADES 5–8</div>
   <h1 class="px">Every attack is a question.</h1>
-  <p class="lead">Students explore dungeons, battle monsters, and collect loot — and the only way to win a fight is to <b>answer questions correctly</b>. It runs right in the browser on Chromebooks and computers.</p>
+  <p class="lead">Students explore dungeons, battle monsters, and collect loot — and the only way to win a fight is to <b>answer questions correctly</b>. It runs right in the browser on Chromebooks, computers, tablets and phones.</p>
   <div class="cta"><a class="btn gold" href="play/">▶ Play the Free Demo</a><a class="btn" href="#full">⭐ Get the Full Version · from $19.99</a></div>
   <div class="mute" style="color:var(--mute);font-size:14px">No sign-up. No student accounts. Nothing to install. <button class="btn sm" id="inst" style="display:none;margin-left:6px">📲 Install as an app</button></div>
-  <div class="pills"><span class="pill">🔬 Science</span><span class="pill">🌎 Social Studies</span><span class="pill">📖 ELA</span><span class="pill">➗ Math</span><span class="pill">✅ Oklahoma Academic Standards</span></div>
+  <div class="pills"><span class="pill">🔬 Science</span><span class="pill">🌎 Social Studies</span><span class="pill">📖 ELA</span><span class="pill">➗ Math</span><span class="pill">✅ Oklahoma Academic Standards</span><span class="pill">🗺️ Works in any state</span></div>
  </div>
  <div><div class="live" id="live"><iframe src="play/?showcase=1" title="The game playing itself: a hero answers questions to defeat monsters" tabindex="-1" loading="eager"></iframe></div><div class="livecap">▶ Live preview — the real game, playing itself</div></div>
 </div></header>
@@ -85,13 +93,17 @@ footer{padding:30px 0 50px;color:var(--mute);font-size:14px;border-top:1px solid
 <section><div class="wrap">
  <h2 class="px">What's inside</h2><p class="sub">Built by a classroom teacher to keep students practicing — and coming back.</p>
  <div class="feat">
-  <div class="f"><div class="i">📚</div><h3>Grades 5–8 content</h3><p>Science, Social Studies, ELA, and Math questions tagged to Oklahoma Academic Standards.</p></div>
+  <div class="f"><div class="i">📚</div><h3>Grades 5–8 content</h3><p>Science, Social Studies, ELA, and Math questions tagged to Oklahoma Academic Standards. Works in any state — add your own questions in the Teacher Hub.</p></div>
   <div class="f"><div class="i">🔁</div><h3>Smart review</h3><p>Missed questions come back later as "Mistake Monsters" until students master them.</p></div>
   <div class="f"><div class="i">🔊</div><h3>Read-aloud & supports</h3><p>Questions can be read aloud. Bigger text, high contrast, extra time, and fewer answer choices are built in.</p></div>
+  <div class="f"><div class="i">🛡️</div><h3>Gear & armor sets</h3><p>A paper-doll Gear screen with 7 slots, one-tap Auto-Equip, and 12 armor sets that change how your hero looks and add set bonuses.</p></div>
   <div class="f"><div class="i">🐾</div><h3>Lots to collect</h3><p>Pets, gear, crafting, fishing, cosmetics, daily quests, and achievements keep students motivated.</p></div>
   <div class="f"><div class="i">👥</div><h3>Party play</h3><p>2–3 students can play together on one device and take turns answering.</p></div>
   <div class="f"><div class="i">🔒</div><h3>Private by design</h3><p>No student accounts or emails. Progress saves on each device; Save Codes move it between computers.</p></div>
  </div>
+ <div class="sets" id="sets" aria-label="Heroes wearing six of the twelve armor sets"></div>
+ <p class="setsnote">Six of the 12 armor sets. The free demo includes the first 4 sets; the full version has all 12.</p>
+ <script type="application/json" id="setSpr">[{"c":"warrior","s":"magma","n":"Magma Core","a":"#ffb02e","m":["..`.^^^^.`.w","..`^^^^^^`.w","...^ssss^..w","..ssessess.w","....ssss...w","..&b@@@@b&.w",".%b@&@@@&b=y","%%@@@@@&@@=.","%%.@@&@@@...","%%.dd..dd...","...~~..~~...","..~~~..~~~.."],"p":{"s":"#f2c49b","e":"#1d1d1d","b":"#9aa3ad","w":"#eef3f8","y":"#e7b52c","d":"#6b4a2b","@":"#d2401f","%":"#5a1a10","&":"#ffb02e","^":"#d2401f","`":"#ffb02e","=":"#5a1a10","~":"#51170e"}},{"c":"mage","s":"cosmic","n":"Cosmic Atom","a":"#9fe8ff","m":["...`h`h`....","...^`^^`^.oo","...hssssh.oo","..shessehs.n","....hhhh...n","..&%%hh%%&.n",".@@%&yy%&@@n",".@@@%%%&@@=n",".@@@@&@@@@n.","..@@@@&@@@..","..~~~~~~~~..",".~~~~~~~~~~."],"p":{"y":"#ffd84a","s":"#f2c49b","e":"#1d1d1d","o":"#5ff0ff","n":"#7a5230","h":"#6b4226","@":"#1a1a46","%":"#5a3fc4","&":"#9fe8ff","^":"#1a1a46","`":"#9fe8ff","=":"#5a3fc4","~":"#5139b0"}},{"c":"ranger","s":"dragon","n":"Dragonscale","a":"#ffcf4a","m":[".b`.^^^^.`..","bt`^^^^^^`..","bt.^ssss^...","btssessess..","bt..ssss....","%t.@@@@@@&..","%t=@&@@@&@q.","%t.@@@@&@@q.","%t.@@&%@@q..","%t..dd.dd...",".~..~~.~~...","...~~..~~..."],"p":{"s":"#f2c49b","e":"#1d1d1d","b":"#8a5a2b","t":"#e8e0c8","q":"#8b3a2a","d":"#4a3a28","@":"#2f8a5a","%":"#174a32","&":"#ffcf4a","^":"#2f8a5a","`":"#ffcf4a","=":"#174a32","~":"#15432d"}},{"c":"cleric","s":"frost","n":"Glacier","a":"#ffffff","m":["...`h`h`....","...^`^^`^.mm","...hssssh.mm","..ssessess.n","....ssss...n","..&&&&&&&&.n",".=@@@%%@@@=n","..@@%%%%@@..","..@@@%%@@@..","..@@@%%@@@..","..~~~~~~~~..","...~~..~~..."],"p":{"h":"#6b4226","s":"#f2c49b","e":"#1d1d1d","m":"#b7bec8","n":"#6b4a2b","@":"#cfeaff","%":"#4a8ad8","&":"#ffffff","^":"#cfeaff","`":"#ffffff","=":"#4a8ad8","~":"#437cc2"}},{"c":"warrior","s":"legion","n":"Roman Legion","a":"#f4e3b0","m":["....^``^...w","...^^``^^..w","...^ssss^..w","..ssessess.w","....ssss...w","..&b@@@@b&.w",".%b@@@@@@b=y","%%@@@@@@@@=.","&&.&&&&&&...","%%.dd..dd...","...~~..~~...","..~~~..~~~.."],"p":{"s":"#f2c49b","e":"#1d1d1d","b":"#9aa3ad","w":"#eef3f8","y":"#e7b52c","d":"#6b4a2b","@":"#b3202a","%":"#d9a521","&":"#f4e3b0","^":"#b3202a","`":"#f4e3b0","=":"#d9a521","~":"#c3951e"}},{"c":"mage","s":"pharaoh","n":"Pharaoh's Gold","a":"#fff1b0","m":["....^^^^....","...^^``^^.oo","..^^ssss^^oo","..^hesseh^.n","..^.hhhh.^.n","..&%%hh%%&.n",".@@%%yy%%@@n",".@@@%%%%@@=n",".@@@@&&@@@n.","..@@@&&@@@..","..~~~~~~~~..",".~~~~~~~~~~."],"p":{"y":"#ffd84a","s":"#f2c49b","e":"#1d1d1d","o":"#5ff0ff","n":"#7a5230","h":"#6b4226","@":"#e0b23a","%":"#1f5fa8","&":"#fff1b0","^":"#e0b23a","`":"#fff1b0","=":"#1f5fa8","~":"#1c5697"}}]</script>
 </div></section>
 
 <section id="teachers"><div class="wrap">
@@ -151,11 +163,11 @@ footer{padding:30px 0 50px;color:var(--mute);font-size:14px;border-top:1px solid
 
 <section><div class="wrap">
  <h2 class="px">Questions</h2>
- <details><summary>What devices does it run on?</summary><p>Chromebooks and Windows or Mac computers with a modern browser (Chrome, Edge, Firefox, or Safari). Nothing to install.</p></details>
+ <details><summary>What devices does it run on?</summary><p>Chromebooks, Windows or Mac computers, and tablets and phones (iPad, iPhone, Android) with a modern browser (Chrome, Edge, Firefox, or Safari). Nothing to install. The screen adjusts to fit smaller devices.</p></details>
  <details><summary>Do students need accounts or email addresses?</summary><p>No. Students just type a hero name. Progress saves on the device, and a Save Code moves it to another computer.</p></details>
  <details><summary>Does it need the internet?</summary><p>Only to load the page the first time. After that, the demo works offline. You can also install it like an app (look for 📲 Install, or the install icon in Chrome's address bar).</p></details>
  <details><summary>What information does it collect?</summary><p>No student accounts or names. Progress stays on the device. The demo sends anonymous play stats and any feedback you choose to send. See the <a href="privacy.html">privacy page</a>.</p></details>
- <details><summary>What standards does it cover?</summary><p>Grades 5–8 Science, Social Studies, ELA, and Math, tagged to Oklahoma Academic Standards.</p></details>
+ <details><summary>What standards does it cover?</summary><p>Grades 5–8 Science, Social Studies, ELA, and Math, tagged to Oklahoma Academic Standards. Teachers in any state can use it: pick topics that match your standards and add your own questions in the Teacher Hub.</p></details>
  <details><summary>How much is the full version?</summary><p>The Classroom Edition is $19.99 one-time at launch (regular $24.99). The Online Plan is $29.99 per year, and a School License starts at $199 per year. See <a href="#full">plans</a>.</p></details>
  <details><summary>Can my school pay with a purchase order?</summary><p>Yes. Choose a plan in the <a href="#full">form</a>, mention a purchase order, and you'll get an invoice by email.</p></details>
  <details><summary>What if it doesn't work for my class?</summary><p>Try the free demo first. If the full version isn't a fit, email within 14 days of buying for a full refund.</p></details>
@@ -179,6 +191,7 @@ $('fv').addEventListener('submit',async e=>{e.preventDefault();const em=$('fvEma
   try{localStorage.setItem('htq_fvSent',String(Date.now()));}catch(x){}out.style.color='var(--green)';out.textContent='🎉 Thanks! Your request was sent. You will hear back by email.';$('fv').reset();}
  catch(x){out.style.color='var(--red)';out.textContent='Could not send. Check your internet connection and try again.';}
  $('fvGo').disabled=false;});})();
+(function(){try{const box=document.getElementById('sets'),L=JSON.parse(document.getElementById('setSpr').textContent);L.forEach(S=>{const f=document.createElement('figure'),c=document.createElement('canvas');c.width=14;c.height=14;const x=c.getContext('2d'),P=S.p,g=S.m.map(r=>r.padEnd(12,'.').slice(0,12)),on=(i,j)=>i>=0&&j>=0&&i<12&&j<12&&P[g[j][i]];x.fillStyle='#0b0910';for(let j=-1;j<=12;j++)for(let i=-1;i<=12;i++){if(on(i,j))continue;if(on(i-1,j)||on(i+1,j)||on(i,j-1)||on(i,j+1))x.fillRect(i+1,j+1,1,1);}for(let j=0;j<12;j++)for(let i=0;i<12;i++){const col=P[g[j][i]];if(col){x.fillStyle=col;x.fillRect(i+1,j+1,1,1);}}c.setAttribute('role','img');c.setAttribute('aria-label',S.n+' set');const cap=document.createElement('figcaption');cap.textContent=S.n;cap.style.color=S.a==='#ffffff'?'#bfe6ff':S.a;f.appendChild(c);f.appendChild(cap);box.appendChild(f);});}catch(e){}})();
 document.querySelectorAll('[data-plan]').forEach(b=>b.addEventListener('click',()=>{const s=document.getElementById('fvPlan');s.value=b.dataset.plan;document.getElementById('fv').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>document.getElementById('fvEmail').focus({preventScroll:true}),500);}));
 </script>
 </body></html>
