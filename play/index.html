@@ -6290,6 +6290,276 @@ function bindRush(){if(!$('#ruMake'))return;$('#ruG').onchange=e=>{rushGroup=e.t
  if(!par.querySelector('[data-tab="b"]')){par.insertAdjacentHTML('beforeend',`<button class="tab${hubTab==='b'?' on':''}" data-tab="b">🏁 Review Rush</button>`);par.querySelector('[data-tab="b"]').onclick=()=>{try{saveHub(true);}catch(e){}hubTab='b';openTeacher();};}
  if(hubTab==='b'){par.querySelectorAll('[data-tab]').forEach(t=>t.classList.toggle('on',t.dataset.tab==='b'));const hb=document.querySelector('.hubbody');if(hb){hb.innerHTML=rushTabHTML();bindRush();}}}catch(e){}};}
 
+
+// ===================== V35: REVIEW RUSH RESULTS IN REPORT CARD CODES + PROGRESS REPORT =====================
+{const _reR=rushEnd;rushEnd=function(won){const R=RUSH,pv=R&&R.r&&hero&&hero.rushes&&hero.rushes[R.r.i],pt=pv&&pv.tries||(pv?1:0);_reR.apply(this,arguments);
+ try{if(R&&R.r&&hero&&hero.rushes&&hero.rushes[R.r.i]){const rec=hero.rushes[R.r.i],res={};Object.entries(R.res||{}).forEach(([k,v])=>res[k]=[v[0],v[1]]);
+  rec.res=res;rec.tries=pt+1;saveHero();}}catch(e){}};}
+{const _hsR=heroSummary;heroSummary=function(h){const r=_hsR(h);r.rush={};Object.entries(h.rushes||{}).forEach(([i,x])=>r.rush[i]={n:x.n,pct:x.pct||0,last:x.last||0,won:!!x.won,tries:x.tries||1,res:x.res||{}});return r;};}
+{const _rcR=reportCode;reportCode=function(h){const base=_rcR(h),ent=Object.entries(h.rushes||{});if(!ent.length)return base;
+ const f=base.slice(5).split('~');while(f.length<20)f.push('');
+ f[20]=ent.map(([i,x])=>[xEnc(i),xEnc(x.n||''),b36(x.pct),b36(x.last),x.won?1:0,b36(x.tries||1),Object.entries(x.res||{}).map(([k,v])=>xEnc(k)+'-'+b36(v[0])+'-'+b36(v[1])).join('_')].join('.')).join(',');
+ return'MWQ2:'+f.join('~');};}
+{const _pcR=parseCodes;parseCodes=function(txt){const out=_pcR(txt);const ws=String(txt||'').split(/\s+/).filter(w=>w.startsWith('MWQ2:'));let j=0;
+ out.forEach(r=>{if(r.v!==2)return;const w=ws[j++];if(!w)return;const f=w.slice(5).split('~');if(!f[20])return;const D_=s=>{try{return decodeURIComponent(s||'');}catch(e){return s||'';}};r.rush={};
+  f[20].split(',').forEach(e=>{const[i,n,p,l,wn,tr,list]=e.split('.');const res={};(list||'').split('_').filter(Boolean).forEach(x=>{const[k,c,t]=x.split('-');res[D_(k)]=[u36(c),u36(t)];});
+   r.rush[D_(i)]={n:D_(n),pct:u36(p),last:u36(l),won:wn==='1',tries:u36(tr)||1,res};});});return out;};}
+function rushReportHTML(all){const st=all.filter(r=>r.rush&&Object.keys(r.rush).length);if(!st.length)return'';
+ const ids={};st.forEach(r=>Object.entries(r.rush).forEach(([i,x])=>{ids[i]=ids[i]||x.n;}));
+ const col=p=>p>=80?'#7cf09a':p>=60?'#ffd966':'#ff8a8a';
+ return`<h3>🏁 Review Rush results</h3><p class="mini">Best and most recent score for each student, then accuracy on each standard from their most recent run. The class row averages every student's answers on that standard. Red standards are the ones to reteach before the test.</p>`+
+ Object.entries(ids).map(([i,n])=>{const rs=st.filter(r=>r.rush[i]);const codes=[...new Set(rs.flatMap(r=>Object.keys(r.rush[i].res||{})))].sort();
+  const cls={};codes.forEach(c=>{let a=0,t=0;rs.forEach(r=>{const v=r.rush[i].res[c];if(v){a+=v[0];t+=v[1];}});cls[c]=t?Math.round(a/t*100):null;});
+  const cell=v=>v&&v[1]?`<td style="color:${col(v[0]/v[1]*100)}">${Math.round(v[0]/v[1]*100)}% <span class="mini">(${v[0]}/${v[1]})</span></td>`:'<td class="mini">—</td>';
+  const avgBest=Math.round(rs.reduce((s,r)=>s+r.rush[i].pct,0)/rs.length);
+  return`<div class="mini" style="margin:10px 0 4px"><b style="font-size:14px">${esc(n||'Review Rush')}</b> · ${rs.length} student${rs.length===1?'':'s'} · class average best score ${avgBest}%</div>
+  <div class="tscroll"><table class="rtab"><caption class="sr-only">${esc(n||'Review Rush')} results by student and standard</caption><tr><th scope="col">Student</th><th scope="col">Best</th><th scope="col">Last</th><th scope="col">Runs</th>${codes.map(c=>`<th scope="col">${esc(c)}</th>`).join('')}</tr>
+  ${rs.map(r=>{const x=r.rush[i];return`<tr><th scope="row" style="text-align:left">${esc(r.n)}${x.won?' 🏆':''}</th><td style="color:${col(x.pct)}"><b>${x.pct}%</b></td><td>${x.last}%</td><td>${x.tries}</td>${codes.map(c=>cell(x.res[c])).join('')}</tr>`;}).join('')}
+  <tr style="border-top:2px solid #ffffff55"><th scope="row" style="text-align:left">Class</th><td><b>${avgBest}%</b></td><td></td><td></td>${codes.map(c=>cls[c]===null?'<td>—</td>':`<td style="color:${col(cls[c])}"><b>${cls[c]}%</b></td>`).join('')}</tr></table></div>`;}).join('');}
+{const _rrR=renderReport;renderReport=function(){const h=_rrR();try{return h+rushReportHTML(allStudents());}catch(e){return h;}};}
+{const _gbR=gradebookRows;gradebookRows=function(){const rows=_gbR(),all=allStudents();const ids={};all.forEach(r=>Object.entries(r.rush||{}).forEach(([i,x])=>ids[i]=ids[i]||x.n));
+ Object.entries(ids).forEach(([i,n])=>{rows[0].push('Review Rush: '+n+' (best %)');rows.slice(1).forEach((row,k)=>{const x=all[k]&&all[k].rush&&all[k].rush[i];row.push(x?x.pct:'');});});return rows;};}
+
+
+// ===================== V36: SPANISH MODE (BETA) — menus, story, tutorial, read-aloud. Questions stay in English. =====================
+const LANG_KEY='htqDemo_lang';
+let LANG=(()=>{try{return localStorage.getItem(LANG_KEY)||'en';}catch(e){return'en';}})();
+const ES={
+// title + hero creation
+"⚔️ A Science & History Dungeon Quest ⚔️":"⚔️ Una aventura de ciencia e historia en mazmorras ⚔️","§T§'s":"El tesoro escondido","Hidden Treasure":"de §T§",
+"⚔️ New Hero":"⚔️ Nuevo héroe","❓ How to Play":"❓ Cómo jugar","👥 Party Play (2–3)":"👥 Juego en grupo (2–3)","🏛️ Hall of Fame":"🏛️ Salón de la fama","🍎 Teacher Hub":"🍎 Panel del maestro","🔑 Load Save Code":"🔑 Cargar código de guardado","👓 Reading & Display":"👓 Lectura y pantalla",
+"Type your hero name...":"Escribe el nombre de tu héroe...","Read aloud (R)":"Leer en voz alta (R)","Remove two wrong answers":"Quitar dos respuestas incorrectas","Pay the monster to tell you the answer":"Págale al monstruo para que te diga la respuesta","Pause and leave — you'll get this same question next time":"Pausar y salir — la próxima vez tendrás esta misma pregunta","Close":"Cerrar",
+"Create Your Hero":"Crea tu héroe","Hero name":"Nombre del héroe","Customize your hero":"Personaliza tu héroe","Body":"Cuerpo","♂ Male":"♂ Hombre","♀ Female":"♀ Mujer","Race":"Raza","Human":"Humano","Elf":"Elfo","Orc":"Orco","Skin":"Piel","Hair":"Cabello","Short":"Corto","Long":"Largo","Ponytail":"Cola de caballo","Braids":"Trenzas","Bun":"Moño","Curly":"Rizado","Spiky":"De punta","Mohawk":"Cresta","Bald":"Calvo","Hair color":"Color de cabello","Extras":"Extras","Beard":"Barba","Helmet":"Casco","Choose your class":"Elige tu clase","◀ Back":"◀ Atrás","Begin the Quest ▶":"Comenzar la aventura ▶","NEW":"NUEVO","SECRET":"SECRETO","??? Secret Class":"??? Clase secreta",
+"★ Versatile Learner — +10% experience":"★ Aprendiz versátil — +10% de experiencia",
+"Warrior":"Guerrero","Cleric":"Clérigo","Ranger":"Arquero","Mage":"Mago","Paladin":"Paladín","Necromancer":"Nigromante","Alchemist":"Alquimista","Druid":"Druida","Rogue":"Pícaro","Monk":"Monje","Bard":"Bardo",
+"A sturdy fighter with the most health and the heaviest armor.":"Un luchador resistente con la mayor salud y la armadura más pesada.",
+"A holy healer who can keep fighting long after others fall.":"Un sanador sagrado que sigue luchando cuando otros caen.",
+"A sharp-eyed archer who lands critical hits and spots wrong answers.":"Un arquero de vista aguda que da golpes críticos y detecta respuestas incorrectas.",
+"A spellcaster with huge damage but fragile health.":"Un hechicero con mucho daño pero poca salud.",
+"A potion-mixing scientist who brews acids, catalysts, and explosive reactions.":"Un científico que mezcla pociones: ácidos, catalizadores y reacciones explosivas.",
+"A nature guardian who shapeshifts into animals.":"Un guardián de la naturaleza que se transforma en animales.",
+"A sneaky shadow who strikes first and loves treasure.":"Una sombra sigilosa que ataca primero y ama los tesoros.",
+"A martial artist whose combos grow with every correct answer.":"Un artista marcial cuyos combos crecen con cada respuesta correcta.",
+"A musician whose songs power up the whole party.":"Un músico cuyas canciones fortalecen a todo el grupo.",
+"★ Toughness — takes 15% less damage from monsters.":"★ Dureza — recibe 15% menos daño de los monstruos.",
+"★ Blessed — heals 5% of max HP on every correct answer.":"★ Bendito — cura 5% de su salud máxima con cada respuesta correcta.",
+"★ Keen Eye — 20% chance to land critical hits.":"★ Ojo agudo — 20% de probabilidad de golpe crítico.",
+"★ Arcane Mind — holds 6 Focus and gains +1 Focus when each battle starts.":"★ Mente arcana — guarda 6 de Enfoque y gana +1 al empezar cada batalla.",
+"★ Potion Expert — potions heal 50% more.":"★ Experto en pociones — las pociones curan 50% más.",
+"🔒 Unlocks when any hero on this device starts ⭐ New Game+.":"🔒 Se desbloquea cuando un héroe de este aparato empieza ⭐ Nueva partida+.",
+"🌟 Talent tree: 8 talent choices + 3 new abilities":"🌟 Árbol de talentos: 8 opciones + 3 habilidades nuevas",
+"⚔️ Mighty Cleave":"⚔️ Tajo poderoso","(2⚡): Your next correct answer deals TRIPLE damage.":"(2⚡): Tu próxima respuesta correcta hace TRIPLE daño.",
+"🛡️ Iron Wall":"🛡️ Muro de hierro","(2⚡): Blocks all damage from your next wrong answer.":"(2⚡): Bloquea todo el daño de tu próxima respuesta incorrecta.",
+"✨ Healing Light":"✨ Luz sanadora","(2⚡): Restore 40% of your max HP.":"(2⚡): Recupera 40% de tu salud máxima.",
+"☀️ Holy Smite":"☀️ Golpe sagrado","🦅 Eagle Eye":"🦅 Ojo de águila","(1⚡): Removes two wrong answers from the question.":"(1⚡): Quita dos respuestas incorrectas de la pregunta.",
+"🏹 Twin Shot":"🏹 Disparo doble","(2⚡): Your next correct answer fires TWO arrows.":"(2⚡): Tu próxima respuesta correcta dispara DOS flechas.",
+"🔥 Fireball":"🔥 Bola de fuego","(3⚡): Instantly blast for 3× damage (dragons resist fire).":"(3⚡): Explosión inmediata de 3× daño (los dragones resisten el fuego).",
+"❄️ Frost Nova":"❄️ Nova de hielo","(2⚡): Freeze the monster: your next 2 wrong answers deal no damage.":"(2⚡): Congela al monstruo: tus próximas 2 respuestas incorrectas no te hacen daño.",
+"🐻 Bear Form":"🐻 Forma de oso","🐺 Wolf Form":"🐺 Forma de lobo","🗡️ Backstab":"🗡️ Puñalada","💨 Smoke Bomb":"💨 Bomba de humo","🖐️ Palm Strike":"🖐️ Golpe de palma","🧘 Meditate":"🧘 Meditar","🥁 Battle Anthem":"🥁 Himno de batalla","🎶 Lullaby":"🎶 Canción de cuna","🧪 Acid Flask":"🧪 Frasco de ácido","⚗️ Catalyst":"⚗️ Catalizador",
+// camp
+"🏫 Not in a class — tap to join":"🏫 Sin clase — toca para unirte","🌍 Explore the Overworld":"🌍 Explorar el mundo","🔬 Subject: Science":"🔬 Materia: Ciencias","📜 Subject: History":"📜 Materia: Historia",
+"⚔️ Adventure":"⚔️ Aventura","🎒 Hero & Gear":"🎒 Héroe y equipo","🐾 Pets & Games":"🐾 Mascotas y juegos","📚 Learning":"📚 Aprendizaje","⚙️ Class & Settings":"⚙️ Clase y ajustes",
+"🔧 Camp Repairs":"🔧 Reparaciones","💀 Hard Mode: OFF":"💀 Modo difícil: NO","💀 Hard Mode: ON":"💀 Modo difícil: SÍ","🏁 Review Rush":"🏁 Repaso rápido","📅 Daily Quests":"📅 Misiones diarias","🔒 Raids":"🔒 Incursiones","⚔️ Raids":"⚔️ Incursiones","🐲 Bestiary":"🐲 Bestiario","🔒 Endless Tower":"🔒 Torre sin fin","🗼 Endless Tower":"🗼 Torre sin fin",
+"🗺️ Treasure Map":"🗺️ Mapa del tesoro","Each boss you defeat gives you one piece of the map. Find all 20 to reach Hidden Treasure Quest! Your campfire fully heals you between dungeons.":"Cada jefe que derrotes te da una pieza del mapa. ¡Encuentra las 20 para llegar al tesoro escondido de §T§! Tu fogata te cura por completo entre mazmorras.",
+"🏰 Choose a Dungeon":"🏰 Elige una mazmorra","🔒 Locked":"🔒 Bloqueado",
+"🌟 Talents":"🌟 Talentos","🎒 Bag & Gear":"🎒 Bolsa y equipo","🏪 Merchant":"🏪 Mercader","🛠️ Professions":"🛠️ Oficios","💈 Appearance":"💈 Apariencia","👗 Wardrobe":"👗 Guardarropa","🏡 Buy a Cabin":"🏡 Comprar una cabaña","🏡 My Cabin":"🏡 Mi cabaña",
+"📋 Assignments":"📋 Tareas","📚 Library — Daily Reading":"📚 Biblioteca — Lectura diaria","🧠 Study Hall":"🧠 Sala de estudio","📖 Vocabulary":"📖 Vocabulario","📜 Knowledge Scroll":"📜 Pergamino del saber","✍️ Write a Question":"✍️ Escribe una pregunta","🎁 Redeem Code":"🎁 Canjear código",
+"🏫 Join Class":"🏫 Unirse a una clase","🏫 My Class":"🏫 Mi clase","⏰ Class Timer":"⏰ Reloj de clase","🔑 Save Code":"🔑 Código de guardado","💾 Save & Quit":"💾 Guardar y salir","🎵 Music On":"🎵 Música: sí","🎵 Music Off":"🎵 Música: no","💬 Feedback":"💬 Comentarios",
+"Join a class":"Unirse a una clase","Complete all 20 dungeons":"Completa las 20 mazmorras","Beat 5 bosses to unlock":"Vence a 5 jefes para desbloquear",
+// tutorial + misc
+"Skip tutorial":"Saltar tutorial","Got it!":"¡Entendido!",
+// repairs / hard mode / rush / daily
+"🔧 2 Repair Kits":"🔧 2 kits de reparación","🔧 Repair equipped (0g)":"🔧 Reparar lo equipado (0g)","🔧 Repair everything (0g)":"🔧 Reparar todo (0g)","(equipped)":"(equipado)","✔ Like new":"✔ Como nuevo",
+"💀 Hard Mode":"💀 Modo difícil","Hard Mode is":"El modo difícil está","OFF":"APAGADO","ON":"ENCENDIDO","💀 Turn Hard Mode ON":"💀 Encender modo difícil","💀 Turn Hard Mode OFF":"💀 Apagar modo difícil",
+"🏁 Start":"🏁 Empezar","Paste a Review Rush code":"Pega un código de Repaso rápido","New quests every day! Finish them to earn rewards.":"¡Misiones nuevas cada día! Termínalas para ganar premios.",
+// a11y
+"These settings are saved on this device.":"Estos ajustes se guardan en este aparato.","Text size":"Tamaño del texto","Normal":"Normal","Large":"Grande","Extra large":"Muy grande","Easier reading":"Lectura más fácil",
+"🔤 Easy-read font (clear letters that are hard to mix up, like b/d and I/l)":"🔤 Letra fácil de leer (letras claras que no se confunden, como b/d e I/l)",
+"◐ High contrast (bright white text on black)":"◐ Alto contraste (texto blanco sobre negro)","🧘 Reduce motion (turn off shaking and flashing effects)":"🧘 Menos movimiento (sin temblores ni destellos)",
+"🔊 Read every question aloud":"🔊 Leer cada pregunta en voz alta","⏳ Get-ready time at the start of a battle":"⏳ Tiempo para prepararse al empezar una batalla","Off":"No","1 second":"1 segundo","2 seconds":"2 segundos","3 seconds":"3 segundos","4 seconds":"4 segundos",
+"Answers can't be picked until the countdown ends, so a tap or key press from moving can't choose an answer by accident.":"No se pueden elegir respuestas hasta que termine la cuenta regresiva, así no eliges una por accidente al moverte.","✔ Done":"✔ Listo","Done":"Listo",
+// dungeon + combat
+"🌟 Talents (T)":"🌟 Talentos (T)","🎒 Bag (I)":"🎒 Bolsa (I)","🧪 Potion (P)":"🧪 Poción (P)","❓ Help":"❓ Ayuda","🏕️ Retreat":"🏕️ Retirarse",
+"— VS —":"— CONTRA —","Focus":"Enfoque","🔊 Read":"🔊 Leer","💰 Bribe":"💰 Soborno","⏸ Pause":"⏸ Pausa","🎲 50/50":"🎲 50/50","Heal 50% HP":"Cura 50% de salud","+3 Focus":"+3 de Enfoque",
+"2⚡ · Your next correct answer deals TRIPLE damage.":"2⚡ · Tu próxima respuesta correcta hace TRIPLE daño.","2⚡ · Blocks all damage from your next wrong answer.":"2⚡ · Bloquea todo el daño de tu próxima respuesta incorrecta.",
+"Your next correct answer deals TRIPLE damage.":"Tu próxima respuesta correcta hace TRIPLE daño.","Blocks all damage from your next wrong answer.":"Bloquea todo el daño de tu próxima respuesta incorrecta.",
+"✘ Not quite! The answer is:":"✘ ¡Casi! La respuesta es:","✔ Correct!":"✔ ¡Correcto!","🚩 Report this question":"🚩 Reportar esta pregunta","Next Question ▶":"Siguiente pregunta ▶","(Enter)":"(Enter)","damage!":"de daño!","Next ▶":"Siguiente ▶","Finish ▶":"Terminar ▶","Continue ▶":"Continuar ▶",
+"Not quite. Try again.":"Casi. Inténtalo otra vez.","Victory!":"¡Victoria!","🏆 Victory!":"🏆 ¡Victoria!","Defeated...":"Derrotado...",
+"🔒 Secret class! Objective: Get a streak of 15 correct answers in a row.":"🔒 ¡Clase secreta! Objetivo: consigue 15 respuestas correctas seguidas.",
+"🔒 Secret class! Objective: Solve 5 puzzle altars.":"🔒 ¡Clase secreta! Objetivo: resuelve 5 altares de acertijos.",
+"🔒 Secret class! Objective: Find 10 lore scrolls for your Science Journal.":"🔒 ¡Clase secreta! Objetivo: encuentra 10 pergaminos para tu diario de ciencias.",
+"🔒 Secret class! Objective: Defeat 10 different dungeon bosses.":"🔒 ¡Clase secreta! Objetivo: derrota a 10 jefes de mazmorra diferentes.",
+"🔒 Secret class! Objective: Catch the Ancient Coelacanth while fishing at camp.":"🔒 ¡Clase secreta! Objetivo: pesca el celacanto antiguo en el estanque del campamento.",
+// language toggle
+"🌎 Español (beta)":"🌎 Español (beta)","Language":"Idioma",
+// story
+"Hoot! Welcome, traveler. I am Professor Hoot, §T§'s wise old owl.":"¡Hu-hu! Bienvenido, viajero. Soy el Profesor Hoot, el sabio búho de §T§.",
+"Long ago, the legendary teacher §T§ hid a great treasure deep beneath the hills of Crystal Hollow.":"Hace mucho tiempo, el legendario maestro de ciencias §T§ escondió su mayor tesoro bajo las colinas de Crystal Hollow.",
+"The treasure map was torn into 20 pieces and hid one with each of the 20 dungeon bosses — goblins, skeletons, liches, trolls, ogres, evil knights, and DRAGONS.":"Rompió el mapa del tesoro en 20 pedazos y escondió uno con cada uno de los 20 jefes de las mazmorras: duendes, esqueletos, liches, trolls, ogros, caballeros malvados y ¡DRAGONES!",
+"These monsters can only be defeated with science knowledge. Answer correctly and your attacks land. Answer wrong... and they strike back!":"A estos monstruos solo se les vence con conocimiento. Responde bien y tus ataques darán en el blanco. Responde mal... ¡y ellos contraatacan!",
+"Splendid! Bosses also guard baby creatures who may become your pets. Now — to the first dungeon!":"¡Espléndido! Los jefes también cuidan crías que pueden ser tus mascotas. ¡Ahora, a la primera mazmorra!",
+"§T§ hid a brand-new map, and the bosses have grown into elite ★ versions. The loot is better too!":"§T§ escondió un mapa nuevo, y los jefes ahora son versiones élite ★. ¡El botín también es mejor!",
+"A scientist never stops learning. Let's go!":"Un científico nunca deja de aprender. ¡Vamos!",
+"The map leads right here... but where is the treasure?":"El mapa lleva justo aquí... ¿pero dónde está el tesoro?","§T§?! You were here the whole time?":"¡¿§T§?! ¿Estuvo aquí todo el tiempo?",
+"Every monster you defeated, every question you answered — you got smarter with every step.":"Cada monstruo que derrotaste, cada pregunta que respondiste: te volviste más listo con cada paso.",
+"I hid my treasure down here because only a true scientist could reach it. And that scientist is you.":"Escondí mi tesoro aquí abajo porque solo un verdadero científico podría alcanzarlo. Y ese científico eres tú.",
+"Look! The treasure chest is opening!":"¡Mira! ¡El cofre del tesoro se está abriendo!",
+"Inside is gold, gems... and the most valuable treasure of all: everything you learned along the way.":"Adentro hay oro, gemas... y el tesoro más valioso de todos: todo lo que aprendiste en el camino.",
+"...So the treasure is knowledge?":"...¿Entonces el tesoro es el conocimiento?","Well, there is ALSO a lot of gold. You earned it!":"Bueno, TAMBIÉN hay mucho oro. ¡Te lo ganaste!",
+"But remember — a scientist never stops learning. If you want an even bigger challenge, try New Game+.":"Pero recuerda: un científico nunca deja de aprender. Si quieres un reto aún mayor, prueba Nueva partida+.",
+"That was the last boss! The stairs lead down to the treasure itself... hurry!":"¡Ese era el último jefe! Las escaleras bajan hasta el tesoro... ¡date prisa!",
+"Let's go. Stay close, Professor!":"Vamos. ¡No se separe, Profesor!","Lead the way!":"¡Usted primero!","I'm ready. Let's find that map piece.":"Estoy listo. Busquemos esa pieza del mapa.","Dark... spooky... let's do this.":"Oscuro... tenebroso... ¡hagámoslo!",
+"My knowledge is my weapon!":"¡Mi conocimiento es mi arma!","Science is on my side!":"¡La ciencia está de mi lado!","I studied for this!":"¡Estudié para esto!","For §T§'s treasure!":"¡Por el tesoro de §T§!","I know my stuff. Bring it on!":"Me lo sé todo. ¡Adelante!","Every question makes me stronger!":"¡Cada pregunta me hace más fuerte!"
+};
+const STORY_ES=[
+ ["Estos túneles lodosos están llenos de duendes. Creen que la “fotosíntesis” es un tipo de sándwich.","¡Grubnak come tu tarea Y tu almuerzo!","Grubnak... debió... estudiar..."],
+ ["¡Ratas! Miles de ellas. Los descomponedores son útiles; estas ratas solo son groseras.","¡Mis hijos te van a mordisquear!","Squeak... ¡está bien! Toma tu tonta pieza del mapa..."],
+ ["Cuidado: esta gruta está llena de baba. ¿Es sólido? ¿Es líquido? ¡Nadie sabe!","Tomo la forma de mi recipiente... ¡y mi recipiente es TU PERDICIÓN!","Bloop... me estoy... evaporando..."],
+ ["El señor de la guerra de los duendes gobierna esta fortaleza. ¡Es la última parada en las Madrigueras Duende!","¡Mis duendes entrenaron por años! Bueno... semanas. Está bien, diez minutos.","¡¿Vencido por un niño que conoce el ciclo del agua?! ¡Imposible!"],
+ ["La Cripta de los Huesos. ¡Esqueletos por todas partes! ¿Cómo se mueven sin músculos? Magia. Mala magia.","¡Tus huesos se unirán a mi colección!","Me estoy... cayendo... a... pedazos..."],
+ ["Algo ENORME hace ruido en la oscuridad. ¡Mantente alerta!","¡ESTOY HECHO DE MIL ESQUELETOS!","*CLAC* *CLAC* *crunch*"],
+ ["Una biblioteca llena de libros de ciencia robados... vigilada por un liche que nunca los leyó.","El conocimiento es poder, ¡y me robé TODOS los libros!","Espera... ¿tenía que LEERLOS?"],
+ ["La tumba del Señor Liche Vexmor. Fría. Oscura. Tenebrosa. ¡Se me erizan las plumas!","¡Únete a mi ejército de no muertos, héroe!","Mi magia... se desvanece..."],
+ ["Bienvenido a las Cavernas Troll. ¿Oyes ese goteo? ¡Condensación! Vapor de agua que se enfría y se vuelve líquido.","¡Troll aplasta héroe debilucho!","Troll... ir... a dormir siesta..."],
+ ["Los ogros hacen sus banquetes aquí. Cuidado con las piernas de pavo voladoras.","¡Bruug levanta rocas pesadas! ¡Bruug tiene más masa!","Bruug... tiene demasiada inercia... no puede levantarse..."],
+ ["Un pantano lleno de descomponedores que convierten plantas muertas en nutrientes. ¡Huele TERRIBLE!","¡El pantano te tragará entero!","Devuélveme... a la red alimentaria..."],
+ ["La forja de los ogros. El metal conduce muy bien el calor, ¡así que no toques nada!","¡Yo lanzar hechizo de FUEGO! ...Espera, ¿cómo era?","Yo olvidar... los ingredientes..."],
+ ["La Ciudadela Caída. Caballeros malvados vigilan cada pasillo.","¡Regresa ahora o enfrenta mi espada!","Peleas con honor... y conocimiento."],
+ ["Escucha... ecos por todas partes. ¡Ondas de sonido que rebotan en las paredes de piedra!","Eco... eco... tu perdición... perdición... perdición...","Mi armadura... por fin... descansa..."],
+ ["Un observatorio sin estrellas. ¡La archiliche tapó el cielo!","Sin estrellas solo hay oscuridad... ¡y yo!","Las estrellas... regresan..."],
+ ["La sala del trono de Lord Dreadhelm. ¡Si lo vences, cae toda la Ciudadela!","¡Arrodíllate ante el Señor de los Caídos!","La Ciudadela... cae... conmigo..."],
+ ["¡El Pico del Dragón! ¿Sientes ese calor? ¡Energía térmica que irradia de la lava!","Soy pequeño para ser dragón... ¡pero igual escupo FUEGO!","¡Se lo voy a decir a mi mamá! ...Por favor no le digas que perdí."],
+ ["¡Brrr! Un dragón de hielo vive en la cima de esta aguja. Aquí todo está congelado.","¡Haré lentas tus partículas hasta que te congeles!","Me estoy... derritiendo... la energía térmica... gana..."],
+ ["Una hondonada sombría. Aquí no entra la luz: el hogar perfecto para un dragón de sombra.","¡En las sombras nunca me verás venir!","La luz... ¡me QUEMA!..."],
+ ["¡Llegamos: la Bóveda del Tesoro! El tesoro de §T§ está detrás de Ignivar el Antiguo. Todo lo que aprendiste te trajo hasta aquí.","¡Solo un verdadero maestro de la ciencia puede pasar!","Has demostrado tu valor, héroe. El tesoro... es tuyo."]];
+const TAUNT_ES=["¡Grubnak aplasta! ¡Grubnak no necesita ciencia!","¡Squeeeak! ¡Mis ratas masticaron todos tus libros!","Bloop... no soy sólido... tampoco líquido... bloop.","¡NUNCA llegarás al tesoro de §T§!","¡Tengo 206 huesos y todos quieren pelear contigo!","CLAC. CRAC. PERDICIÓN.","Robé todos los libros de ciencia de aquí... solo que nunca los leí.","¡Mi magia es más antigua que la tabla periódica!","Troll tiene hambre. Tú pareces bocadillo.","Bruug tiene músculos más grandes. Bruug no necesita cerebro.","Los descomponedores hicieron este pantano... ¡y tú serás parte de él!","Yo aprender UN hechizo. Dolió. Mucho.","Nadie pasará... ¡sin una calificación aprobatoria!","Mi armadura está vacía... como tu carpeta de tareas.","He estudiado las estrellas por mil años. ¿Y tú?","¡Mi ejército de los Caídos te detendrá aquí!","La energía térmica fluye de lo caliente a lo frío... ¡y yo estoy MUY caliente!","¡Haré lentas tus partículas hasta que te congeles por completo!","Las sombras se forman cuando algo bloquea la luz. YO SOY la sombra.","Por mil años he cuidado el tesoro de §T§. ¡Demuestra tu conocimiento, héroe!"];
+try{STORY.forEach((r,i)=>r.forEach((s,k)=>{if(STORY_ES[i]&&STORY_ES[i][k])ES[s]=STORY_ES[i][k];}));DUNGEONS.forEach((d,i)=>{if(TAUNT_ES[i])ES[d[3]]=TAUNT_ES[i];});}catch(e){}
+const CLASS_ES=n=>ES[n]||n;
+const ES_PAT=[
+ [/^Level (\d+) (♂|♀) (\w+) (\w+)$/,(m,l,s,r,c)=>`Nivel ${l} ${s} ${ES[r]||r} ${ES[c]||c}`],
+ [/^Lv (\d+) (\w+)$/,(m,l,c)=>`Nv ${l} ${ES[c]||c}`],
+ [/^Dungeon (\d+) · (.+)$/,(m,d,n)=>`Mazmorra ${d} · ${n}`],[/^Dungeon (\d+)$/,(m,d)=>`Mazmorra ${d}`],
+ [/^Boss: (.+)$/,(m,b)=>`Jefe: ${b}`],[/^Tip (\d+) of (\d+)$/,(m,a,b)=>`Consejo ${a} de ${b}`],
+ [/^(\d+) \/ (\d+) pieces$/,(m,a,b)=>`${a} / ${b} piezas`],[/^📖 Journal \((\d+)\/(\d+)\)$/,(m,a,b)=>`📖 Diario (${a}/${b})`],
+ [/^🐾 Pets \((\d+)\/(\d+)\)$/,(m,a,b)=>`🐾 Mascotas (${a}/${b})`],[/^🎣 Fishing (.+)$/,(m,a)=>`🎣 Pesca ${a}`],[/^🃏 Science Match (.+)$/,(m,a)=>`🃏 Memorama de ciencias ${a}`],[/^⚒️ Forge (.+)$/,(m,a)=>`⚒️ Forja ${a}`],
+ [/^🪙 (\d+) gold$/,(m,a)=>`🪙 ${a} de oro`],[/^Reward: (.+)$/,(m,a)=>`Premio: ${a}`],
+ [/^🧪 Potion ×(\d+)$/,(m,a)=>`🧪 Poción ×${a}`],[/^🔮 Elixir ×(\d+)$/,(m,a)=>`🔮 Elixir ×${a}`],
+ [/^(.+) hits you for$/,(m,a)=>`${a} te golpea:`],
+ [/^You enter (.+) — Dungeon (\d+): (.+)\.$/,(m,a,d,b)=>`Entras a ${a} — Mazmorra ${d}: ${b}.`],[/^Somewhere below waits (.+)\.\.\.$/,(m,a)=>`En algún lugar abajo espera ${a}...`],
+ [/^Hoot! Dungeon (\d+): (.+?)\. (.+)$/,(m,d,n,r)=>`¡Hu-hu! Mazmorra ${d}: ${n}. ${esT(r)}`],
+ [/^We're entering a new land: the (.+)\. The monsters get tougher from here!$/,(m,a)=>`Entramos a una nueva tierra: ${a}. ¡Desde aquí los monstruos son más fuertes!`],
+ [/^I'm (.+) the (\w+)\. I'm ready!$/,(m,n,c)=>`¡Soy ${n}, ${(ES[c]||c).toLowerCase()}! ¡Estoy listo!`],
+ [/^Hoot hoot! You found treasure map piece #(\d+)!$/,(m,a)=>`¡Hu-hu! ¡Encontraste la pieza #${a} del mapa del tesoro!`],
+ [/^Next stop: (.+)\. Take the stairs when you're ready!$/,(m,a)=>`Próxima parada: ${a}. ¡Baja las escaleras cuando estés listo!`],
+ [/^Hoot! You did it, (.+)! All 20 pieces of the treasure map!$/,(m,a)=>`¡Hu-hu! ¡Lo lograste, ${a}! ¡Las 20 piezas del mapa del tesoro!`],
+ [/^Well done, (.+)! I've been watching your whole quest\.$/,(m,a)=>`¡Bien hecho, ${a}! He estado observando toda tu aventura.`],
+ [/^Hoot! (.+), the dungeons have rebuilt themselves\.\.\. and the monsters came back STRONGER\.$/,(m,a)=>`¡Hu-hu! ${a}, las mazmorras se reconstruyeron... ¡y los monstruos volvieron MÁS FUERTES!`],
+ [/^\*happy noises\* A baby (.+) named (.+) wants to join you! \(Visit the 🐾 Pet Den at camp\.\)$/,(m,k,n)=>`*ruiditos felices* ¡Una cría de ${k} llamada ${n} quiere unirse a ti! (Visita la 🐾 Guarida de mascotas en el campamento.)`],
+ [/^(.+) is here! · (.+) — open the Holiday Shop$/,(m,a,b)=>`¡Llegó ${a}! · ${b} — abre la Tienda de temporada`],
+ [/^Ready for a real challenge,$/,()=>`¿Listo para un verdadero reto,`]
+];
+function esT(s){if(LANG!=='es'||!s)return s;const k=String(s).trim();if(!k)return s;if(Object.prototype.hasOwnProperty.call(ES,k)){const lead=String(s).match(/^\s*/)[0],tail=String(s).match(/\s*$/)[0];return lead+ES[k]+tail;}
+ for(const[re,f]of ES_PAT){const m=k.match(re);if(m){const lead=String(s).match(/^\s*/)[0],tail=String(s).match(/\s*$/)[0];return lead+f(...m)+tail;}}return s;}
+// ----- DOM translation (skips questions, answers, explanations, typing fields) -----
+const ES_SKIP='#cQ,#cAns,.ans,.explain,#cutText,input,textarea,script,style,[data-noes],.qtext,#shQ,#tQ,#laQ,.rtab,pre,code';
+const ES_ORIG=new WeakMap();
+function esNode(n){const el=n.parentElement;if(!el||el.closest(ES_SKIP))return;const v=n.nodeValue;if(!/[A-Za-z]/.test(v))return;const t=esT(v);if(t!==v){ES_ORIG.set(n,v);n.nodeValue=t;}}
+function esAttrs(el){['title','placeholder','aria-label'].forEach(a=>{const v=el.getAttribute&&el.getAttribute(a);if(v&&/[A-Za-z]/.test(v)){const t=esT(v);if(t!==v){el.setAttribute('data-en-'+a,v);el.setAttribute(a,t);}}});}
+function esWalk(root){if(LANG!=='es'||!root)return;if(root.nodeType===3){esNode(root);return;}if(root.nodeType!==1||root.closest&&root.closest('script,style'))return;
+ esAttrs(root);root.querySelectorAll&&root.querySelectorAll('[title],[placeholder],[aria-label]').forEach(esAttrs);
+ const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode())esNode(n);}
+function esRestore(){const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(ES_ORIG.has(n)){n.nodeValue=ES_ORIG.get(n);ES_ORIG.delete(n);}}
+ document.querySelectorAll('[data-en-title],[data-en-placeholder],[data-en-aria-label]').forEach(el=>['title','placeholder','aria-label'].forEach(a=>{const v=el.getAttribute('data-en-'+a);if(v!==null){el.setAttribute(a,v);el.removeAttribute('data-en-'+a);}}));}
+let esBusy=false;const esObs=new MutationObserver(ms=>{if(LANG!=='es'||esBusy)return;esBusy=true;try{for(const m of ms){if(m.type==='characterData')esNode(m.target);else if(m.type==='attributes')esAttrs(m.target);else m.addedNodes.forEach(esWalk);}}finally{esBusy=false;}});
+esObs.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['title','placeholder','aria-label']});
+function setLang(l){LANG=l==='es'?'es':'en';try{localStorage.setItem(LANG_KEY,LANG);}catch(e){}document.documentElement.lang=LANG;if(LANG==='es')esWalk(document.body);else esRestore();try{if(screen==='camp')renderCamp();}catch(e){}}
+document.documentElement.lang=LANG;if(LANG==='es')setTimeout(()=>esWalk(document.body),0);
+// ----- story cutscenes + tutorial -----
+{const _ps=playScene;playScene=function(sc,done){if(LANG==='es'&&sc&&sc.lines)sc=Object.assign({},sc,{lines:sc.lines.map(L=>Object.assign({},L,{t:esT(L.t)}))});return _ps.call(this,sc,done);};}
+const TUT_ES=[n=>`👋 ¡Hola, <b>${esc(n)}</b>! Toca <b>🌍 Explorar el mundo</b>, o elige <b>Mazmorra 1</b> en la lista, para comenzar tu aventura.`,
+ ()=>`🕹️ Muévete con las <b>flechas</b> o <b>W A S D</b>${TOUCHY?' (o las flechas en pantalla)':''}. ¡Camina hacia un monstruo para pelear!`,
+ ()=>`🧠 Lee la pregunta y elige la respuesta correcta. ✔ Las respuestas correctas golpean al monstruo. ✘ Las incorrectas dejan que te golpee. Toca <b>🔊 Leer</b> para escuchar la pregunta (las preguntas están en inglés).`,
+ ()=>`⚔️ Sigue respondiendo hasta vencer al monstruo. Responder mal <i>demasiado rápido</i> cuesta oro, ¡así que lee con cuidado!`,
+ ()=>`👑 Cada mazmorra termina con un <b>jefe</b>. ¡Véncelo para ganar una pieza del mapa del tesoro! Puedes volver al campamento cuando quieras para curarte.`,
+ ()=>`🏕️ El campamento es tu base. Aquí tu héroe se cura, y las pestañas tienen tu equipo, mascotas, juegos y herramientas para aprender. ¡Diviértete!`];
+TUT.forEach((st,i)=>{const en=st.t;st.t=function(){return LANG==='es'&&TUT_ES[i]?TUT_ES[i].apply(this,arguments):en.apply(this,arguments);};});
+// ----- read-aloud: Spanish text gets a Spanish voice; English questions keep the English voice -----
+function looksSpanish(t){t=' '+String(t).toLowerCase()+' ';if(/[ñ¿¡áéíóú]/.test(t))return true;const es=(t.match(/ (el|la|los|las|de|que|y|es|una|un|tu|con|para) /g)||[]).length,en=(t.match(/ (the|and|is|of|to|a|you|what|which|in) /g)||[]).length;return es>en;}
+let esVoice=null;function pickEsVoice(){try{const v=speechSynthesis.getVoices();esVoice=v.find(x=>/^es[-_](US|MX|419)/i.test(x.lang))||v.find(x=>/^es/i.test(x.lang))||null;}catch(e){}}
+try{if('speechSynthesis' in window){pickEsVoice();speechSynthesis.addEventListener&&speechSynthesis.addEventListener('voiceschanged',pickEsVoice);
+ const _spk=speechSynthesis.speak.bind(speechSynthesis);speechSynthesis.speak=function(u){try{if(LANG==='es'&&u&&u.text){const tr=esT(u.text);if(tr!==u.text)u.text=tr;if(looksSpanish(u.text)){u.lang=esVoice?esVoice.lang:'es-MX';if(esVoice)u.voice=esVoice;}}}catch(e){}return _spk(u);};}}catch(e){}
+// Story lines are read aloud too when "Read every question aloud" is on (most helpful for Spanish readers).
+{const _sl=showLine;showLine=function(){_sl.apply(this,arguments);try{if(settings.readAloud&&CS){const L=CS.sc.lines[CS.i];if(L&&L.t&&'speechSynthesis' in window){const u=new SpeechSynthesisUtterance(L.t);u.rate=.95;speechSynthesis.cancel();speechSynthesis.speak(u);}}}catch(e){}};}
+// ----- toggle: Reading & Display + title screen -----
+{const _oa=openA11y;openA11y=function(){_oa.apply(this,arguments);const ok=document.getElementById('a11ok');if(!ok)return;
+ ok.closest('.row').insertAdjacentHTML('beforebegin',`<h3>${LANG==='es'?'Idioma':'Language'}</h3><label class="radio"><input type="checkbox" id="a11es" ${LANG==='es'?'checked':''}> 🌎 Español (beta)</label><p class="mini" data-noes>${LANG==='es'?'Menús, historia y tutorial en español. Las preguntas siguen en inglés por ahora.':'Menus, story, and the tutorial in Spanish. Questions stay in English for now.'}</p>`);
+ document.getElementById('a11es').onchange=e=>{setLang(e.target.checked?'es':'en');openA11y();};};}
+(function(){const tb=document.querySelector('.tbtns');if(!tb||document.getElementById('bLangT'))return;tb.insertAdjacentHTML('beforeend','<button class="btn" id="bLangT" data-noes lang="es">🌎 Español</button>');
+ const b=document.getElementById('bLangT');const paint=()=>{b.textContent=LANG==='es'?'🌎 English':'🌎 Español';b.lang=LANG==='es'?'en':'es';};paint();b.onclick=()=>{setLang(LANG==='es'?'en':'es');paint();};})();
+
+
+// ===================== V37: ACCESSIBILITY PASS — labels, dialogs, focus, live regions =====================
+{const st=document.createElement('style');st.textContent=`.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:3px solid #ffd965!important;outline-offset:2px!important;box-shadow:0 0 0 5px #000a!important}
+.tscroll{overflow-x:auto;max-width:100%}`;document.head.appendChild(st);}
+const A11Y_ICON={'▲':'Move up','▼':'Move down','◀':'Move left','▶':'Move right','✕':'Close','✖':'Close','×':'Close','🔊':'Read aloud','⏸':'Pause','🔇':'Mute','🎵':'Music','❓':'Help','⚙️':'Settings','🗑️':'Delete','✏️':'Edit','➕':'Add','➖':'Remove','📋':'Copy','🔍':'Zoom'};
+const A11Y_IDS={gMusic:'Music on or off',gHelp:'Help',gBag:'Bag',gTal:'Talents',gPot:'Use potion',gLeave:'Retreat to camp',cRead:'Read the question aloud',modalX:'Close'};
+function a11yLabel(el){if(!el||el.nodeType!==1)return;
+ const fix=b=>{if(b.hasAttribute('aria-label'))return;const id=b.id&&A11Y_IDS[b.id];if(id){b.setAttribute('aria-label',id);return;}const tx=(b.textContent||'').trim();
+  if(!/[A-Za-z0-9]{2}/.test(tx)){const lab=b.getAttribute('title')||A11Y_ICON[tx]||A11Y_ICON[tx.replace(/\uFE0F/g,'')];if(lab)b.setAttribute('aria-label',lab);}};
+ if(el.matches&&el.matches('button,[role=button]'))fix(el);el.querySelectorAll&&el.querySelectorAll('button,[role=button]').forEach(fix);
+ // inputs with no label: use placeholder
+ el.querySelectorAll&&el.querySelectorAll('input:not([type=hidden]):not([aria-label]),select:not([aria-label]),textarea:not([aria-label])').forEach(i=>{if(i.id&&document.querySelector('label[for="'+i.id+'"]'))return;if(i.closest('label'))return;const p=i.getAttribute('placeholder')||i.getAttribute('title');if(p)i.setAttribute('aria-label',p);});
+ // clickable divs/spans (swatches, cards) become keyboard reachable
+ el.querySelectorAll&&el.querySelectorAll('[onclick]:not(button):not(a):not(input):not([tabindex])').forEach(d=>{d.setAttribute('tabindex','0');d.setAttribute('role','button');});
+ el.querySelectorAll&&el.querySelectorAll('img:not([alt])').forEach(i=>i.setAttribute('alt',''));}
+new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(a11yLabel))).observe(document.body,{childList:true,subtree:true});
+a11yLabel(document.body);
+// Enter/Space activate role=button elements
+document.addEventListener('keydown',e=>{const t=e.target;if((e.key==='Enter'||e.key===' ')&&t&&t.getAttribute&&t.getAttribute('role')==='button'&&t.tagName!=='BUTTON'){e.preventDefault();t.click();}},true);
+// canvases
+(()=>{const lab={view:'Dungeon map. Use the arrow keys or W A S D to move.',titleArt:'Game title art',lookPrev:'Preview of your hero',tmap:'Treasure map',endArt:'Ending art',cEnemy:'Monster',cHero:'Your hero',cPet:'Your pet',cutCv:'Story scene',cutPor:'Speaker portrait',crBossCv:'Class boss'};
+ Object.entries(lab).forEach(([id,l])=>{const c=document.getElementById(id);if(c){c.setAttribute('role','img');c.setAttribute('aria-label',l);}});})();
+// live regions
+(()=>{const lg=document.getElementById('log');if(lg){lg.setAttribute('role','log');lg.setAttribute('aria-live','polite');lg.setAttribute('aria-label','Adventure log');}
+ const pad=document.querySelector('.pad');if(pad)pad.setAttribute('aria-label','Movement arrows');
+ const sr=document.createElement('div');sr.id='srSay';sr.className='sr-only';sr.setAttribute('aria-live','assertive');sr.setAttribute('role','status');document.body.appendChild(sr);})();
+function srSay(t){const s=document.getElementById('srSay');if(!s)return;s.textContent='';setTimeout(()=>{s.textContent=t;},60);}
+// dialogs: modal, combat, cutscene
+(()=>{[['modal','.mbox'],['combat','.cbox'],['cut','.cutbox']].forEach(([id,box])=>{const o=document.getElementById(id);if(!o)return;const b=o.querySelector(box)||o;b.setAttribute('role','dialog');b.setAttribute('aria-modal','true');});
+ const cb=document.querySelector('#combat .cbox');if(cb)cb.setAttribute('aria-label','Battle');const ct=document.querySelector('#cut .cutbox');if(ct)ct.setAttribute('aria-label','Story');
+ const cq=document.getElementById('cQ');if(cq){cq.setAttribute('aria-live','polite');}
+ const ca=document.getElementById('cAns');if(ca){ca.setAttribute('role','group');ca.setAttribute('aria-label','Answer choices. Press 1 to 4 to answer.');}})();
+const FOCUSABLE='button:not([disabled]),a[href],input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+function visibleFocusables(root){return[...root.querySelectorAll(FOCUSABLE)].filter(e=>e.offsetParent!==null||e.getClientRects().length);}
+let a11yLastFocus=null;
+{const _om=openModal;openModal=function(){const was=modalOpen;if(!was)a11yLastFocus=document.activeElement;_om.apply(this,arguments);
+ const mb=document.querySelector('#modal .mbox'),h=document.querySelector('#modalBody h2,#modalBody h3');if(mb){if(h){h.id=h.id||'modalTitle';mb.setAttribute('aria-labelledby',h.id);}else mb.removeAttribute('aria-labelledby');}
+ setTimeout(()=>{if(!modalOpen)return;const ae=document.activeElement;if(ae&&mb&&mb.contains(ae)&&ae!==document.body)return;const f=visibleFocusables(document.getElementById('modalBody'));const pick=f.find(e=>e.tagName!=='BUTTON'||!/✕/.test(e.textContent))||f[0]||document.getElementById('modalX');pick&&pick.focus({preventScroll:true});},80);};}
+{const _cm=closeModal;closeModal=function(){_cm.apply(this,arguments);setTimeout(()=>{if(modalOpen)return;const t=a11yLastFocus;a11yLastFocus=null;if(t&&document.contains(t)&&t.offsetParent!==null){t.focus({preventScroll:true});return;}
+ const cc=document.querySelector('#campCats .campTab.on')||document.getElementById('bWorld');if(screen==='camp'&&cc)cc.focus({preventScroll:true});},60);};}
+// keep Tab inside whichever dialog is open
+document.addEventListener('keydown',e=>{if(e.key!=='Tab')return;let root=null;if(cutOpen)root=document.querySelector('#cut .cutbox');else if(combatOpen)root=document.querySelector('#combat .cbox');else if(modalOpen)root=document.querySelector('#modal .mbox');if(!root)return;
+ const f=visibleFocusables(root);if(!f.length){e.preventDefault();return;}const i=f.indexOf(document.activeElement);
+ if(e.shiftKey&&(i<=0)){e.preventDefault();f[f.length-1].focus();}else if(!e.shiftKey&&(i===-1||i===f.length-1)){e.preventDefault();f[0].focus();}},true);
+// battle: announce question, focus first answer; announce result
+{let lastQ='';setInterval(()=>{if(!combatOpen||!Cb)return;const q=document.getElementById('cQ');if(!q)return;const t=q.textContent.trim();if(t&&t!==lastQ&&!Cb.locked){const ae=document.activeElement,box=document.querySelector('#combat .cbox');if(box&&box.contains(ae)&&ae!==box){lastQ=t;}else{const a=document.querySelector('#cAns button:not([disabled])');if(a){a.focus({preventScroll:true});lastQ=t;}}}
+ if(Cb.locked&&!Cb._sr){Cb._sr=1;const f=document.querySelector('#cFeed,.feed');if(f)srSay(f.textContent.trim().slice(0,240));const n=document.getElementById('cNext');n&&n.focus({preventScroll:true});}
+ if(!Cb.locked)Cb._sr=0;},300);}
+// cutscenes: give screen readers the whole line at once and a visible Next button target
+{const _sl2=showLine;showLine=function(){_sl2.apply(this,arguments);try{const L=CS&&CS.sc.lines[CS.i];if(L)srSay((document.getElementById('cutName').textContent||'')+': '+L.t);const ct=document.querySelector('#cut .cutbox');ct&&ct.setAttribute('tabindex','-1');ct&&ct.focus({preventScroll:true});}catch(e){}};}
+// camp category tabs: real tab semantics + arrow keys
+{const _cs=campShow;campShow=function(){_cs.apply(this,arguments);const bar=document.querySelector('#campCats .campTabs');if(!bar)return;bar.setAttribute('role','tablist');bar.setAttribute('aria-label','Camp menu');
+ bar.querySelectorAll('.campTab').forEach(t=>{const on=t.classList.contains('on');t.setAttribute('role','tab');t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1;t.id='ctab-'+t.dataset.cat;t.setAttribute('aria-controls','cpane-'+t.dataset.cat);});
+ document.querySelectorAll('#campCats .campPane').forEach(p=>{p.setAttribute('role','tabpanel');p.id='cpane-'+p.dataset.cat;p.setAttribute('aria-labelledby','ctab-'+p.dataset.cat);});
+ if(!bar.dataset.kb){bar.dataset.kb=1;bar.addEventListener('keydown',e=>{const ts=[...bar.querySelectorAll('.campTab')],i=ts.indexOf(document.activeElement);if(i<0)return;let j=-1;
+  if(e.key==='ArrowRight')j=(i+1)%ts.length;else if(e.key==='ArrowLeft')j=(i-1+ts.length)%ts.length;else if(e.key==='Home')j=0;else if(e.key==='End')j=ts.length-1;if(j<0)return;e.preventDefault();e.stopPropagation();ts[j].click();const nt=bar.querySelector('.campTab[data-cat="'+ts[j].dataset.cat+'"]');nt&&nt.focus();});}};}
+// screens: tell screen readers where they are
+{const _sh=show;show=function(n){_sh.apply(this,arguments);try{const L={title:'Title screen',create:'Create your hero',camp:'Camp',game:'Dungeon'};if(L[n])srSay((typeof LANG!=='undefined'&&LANG==='es'?({title:'Pantalla de inicio',create:'Crea tu héroe',camp:'Campamento',game:'Mazmorra'})[n]:L[n]));}catch(e){}};}
+// hero creation choices: mark selected
+setInterval(()=>{document.querySelectorAll('.sel,.on,.picked,.active').forEach(el=>{if(el.tagName==='BUTTON'&&!el.classList.contains('campTab')&&!el.closest('#campCats,#cAns')&&!el.hasAttribute('aria-pressed')){el.setAttribute('aria-pressed','true');el.dataset.ap='mine';}});
+ document.querySelectorAll('button[data-ap="mine"][aria-pressed="true"]').forEach(el=>{if(!(el.classList.contains('sel')||el.classList.contains('on')||el.classList.contains('picked')||el.classList.contains('active'))){el.removeAttribute('aria-pressed');delete el.dataset.ap;}});},700);
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
