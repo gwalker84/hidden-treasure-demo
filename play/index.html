@@ -6937,6 +6937,279 @@ function bindKxOpts(){const save=()=>{const c=kxCfg();c.rate=$('#kxRate').value;
  if(hubTab==='h'){par.querySelectorAll('[data-tab]').forEach(t=>t.classList.toggle('on',t.dataset.tab==='h'));const hb=document.querySelector('.hubbody');if(hb){hb.innerHTML=dashTabHTML();bindDash();}}
  if(hubTab==='o'||hubTab==='q'){const hb=document.querySelector('.hubbody');if(hb&&!$('#kxOpts')){hb.insertAdjacentHTML('afterbegin',kxOptsHTML());bindKxOpts();}}}catch(e){console.warn('dash tab',e);}};}
 
+// ===================== V40: STAGES 1–3 =====================
+// Stage 1: same-size menu buttons, phone layout, badges for new loot / talents / gear upgrades
+// Stage 2: separate 🛡️ Gear tab with a paper doll + ⚡ Auto-Equip Best; 🎒 Bag is now its own tab
+// Stage 3: 12 armor sets (helmet, chest, gloves, boots) with their own look on the hero + 2-piece and 4-piece set bonuses
+{const st=document.createElement('style');st.textContent=`
+.tbtns{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));max-width:760px;margin-left:auto!important;margin-right:auto!important}
+.tbtns .btn{min-height:54px;display:flex;align-items:center;justify-content:center;text-align:center}
+#campCats .campTabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px}
+#campCats .campTab{min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center;width:100%}
+#campCats .campPane{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+#campCats .campPane:not([style*="none"]){display:grid!important}
+#campCats .campPane[style*="none"]{display:none!important}
+#campCats .campPane>.btn,#campCats .campPane>button{width:100%;min-height:56px;margin:0;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.2;font-size:15px;padding:8px 10px}
+.wkTop{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}.wkTop>.btn{width:100%;min-height:52px;margin:0;display:flex;align-items:center;justify-content:center;text-align:center}
+.gbtns{display:grid!important;grid-template-columns:repeat(4,minmax(90px,1fr));gap:8px;flex:1;max-width:560px}
+.gbtns .btn{width:100%;min-height:50px;margin:0;padding:6px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.1;position:relative}
+.gbtns .gi{font-size:20px;line-height:1}.gbtns .gl{font-size:13px}.gbtns .kh{font-size:10px;opacity:.6}
+.gtabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:4px 34px 10px 0}.gtab{min-height:44px;background:#1a1528;border:2px solid #4a3d6a;color:var(--text);border-radius:10px;font-weight:900;font-size:15px;cursor:pointer;font-family:inherit;position:relative}
+.gtab.on{background:#3a2f12;border-color:var(--gold);color:var(--gold)}
+@media (min-width:641px){#view{max-width:calc((100vh - 340px) * 1.4615)!important}}
+.btn,.gtab,.campTab{position:relative}
+.nbadge{position:absolute;top:-8px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e5484d;color:#fff;font:900 12px/20px Nunito,system-ui,sans-serif;text-align:center;border:2px solid #fff;box-shadow:0 2px 6px #0009;pointer-events:none;z-index:2}
+.nbadge.up{background:#2b8a46}.nbadge.tal{background:#d99a1e;color:#2a1a00}
+.nbadge.pop{animation:nbPop .6s ease}@keyframes nbPop{0%{transform:scale(.3)}60%{transform:scale(1.35)}100%{transform:scale(1)}}
+.btn.hasNew{box-shadow:0 0 0 2px #e5484d88,0 3px 0 #0c0912}
+.newtag2{background:#e5484d;color:#fff;font-size:10px;font-weight:900;padding:1px 6px;border-radius:6px;margin-left:6px;vertical-align:middle;letter-spacing:.5px}
+.item.isnew{box-shadow:0 0 0 2px #e5484d77}
+.doll{display:grid;grid-template-columns:minmax(96px,170px) 1fr minmax(96px,170px);gap:10px;align-items:start;margin:6px 0}
+.dcol{display:grid;gap:8px}
+.dmid{display:flex;flex-direction:column;align-items:center;gap:6px;background:radial-gradient(circle at 50% 45%,#2c2440,#141019 70%);border:2px solid var(--edge);border-radius:14px;padding:10px 6px;min-height:100%;box-sizing:border-box}
+#dollCv{width:168px;height:168px;max-width:100%;image-rendering:pixelated;aspect-ratio:1}
+#dollCv.full{filter:drop-shadow(0 0 8px var(--setc,#ffd84a)) drop-shadow(0 0 2px var(--setc,#ffd84a))}
+.dslot{display:flex;align-items:center;gap:8px;min-height:62px;background:#16121f;border:2px solid #4a3d6a;border-radius:10px;padding:6px 8px;color:var(--text);cursor:pointer;font-family:inherit;text-align:left;width:100%;box-sizing:border-box;position:relative}
+.dslot .di{font-size:24px;flex:none;width:28px;text-align:center}.dslot .dn{font-size:12px;font-weight:900;line-height:1.15;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.dslot .dl{font-size:10.5px;color:var(--muted);font-weight:700}.dslot.empty{opacity:.55;border-style:dashed}.dslot.sel{outline:3px solid var(--gold);outline-offset:1px}
+.dslot .sdot{position:absolute;left:4px;top:4px;width:8px;height:8px;border-radius:50%;border:1px solid #000}
+.dslot .upa{position:absolute;right:4px;top:3px;color:#5be37d;font-weight:900;font-size:13px}
+.dbar{height:4px;background:#000;border-radius:2px;margin-top:3px;overflow:hidden}.dbar>i{display:block;height:100%}
+.dstat{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;width:100%;font-size:12.5px;font-weight:800;text-align:center}.dstat span{background:#120f19;border:1px solid #3a3150;border-radius:8px;padding:3px 2px}
+.gact{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:8px 0}.gact .btn{min-height:48px;width:100%;margin:0}
+.setbox{background:#120f19;border:1px solid #3a3150;border-radius:10px;padding:8px 10px;margin:8px 0;font-size:14px}
+.setbox .on{color:#5be37d;font-weight:800}.setbox .off{color:var(--muted)}
+.setline{font-size:12.5px;font-weight:800;margin-top:2px}
+.gdet{margin-top:8px}
+.setgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.setcard{display:flex;gap:10px;background:#16121f;border:2px solid #4a3d6a;border-radius:12px;padding:8px}
+.setcard canvas{width:84px;height:84px;flex:none;image-rendering:pixelated;background:radial-gradient(circle,#2c2440,#141019 70%);border-radius:10px}
+.setcard .sn{font-weight:900;font-size:15px}.setcard .sp{font-size:12px;color:var(--muted);margin:2px 0}.setcard .sb{font-size:12px;line-height:1.3}
+.setcard .sb b{color:#ffd84a}.setcard.locked canvas{filter:brightness(.35) grayscale(.6)}
+.pcs{display:flex;gap:3px;margin:3px 0}.pcs span{font-size:15px;opacity:.25}.pcs span.have{opacity:1}
+@media (max-width:640px){
+ .screen{padding:8px}
+ .panel{padding:12px}
+ .mbox{margin:8px auto;padding:14px 12px;border-radius:12px}
+ #modal{padding:0 6px}
+ .tbtns{grid-template-columns:1fr 1fr}
+ .tbtns .btn{font-size:14px;padding:8px}
+ #campCats .campTabs{grid-template-columns:1fr 1fr}
+ #campCats .campPane{grid-template-columns:1fr 1fr}
+ #campCats .campPane>.btn,#campCats .campPane>button{font-size:13.5px;min-height:54px;padding:6px}
+ .wkTop{grid-template-columns:1fr 1fr}.wkTop>.btn{font-size:14px;padding:8px 6px}
+ #screen-game{padding:6px 6px 4px}
+ #hud{gap:2px 10px;padding:6px 8px;margin-bottom:6px;font-size:13px}
+ #hud .hgrp{gap:8px}#hud .btn.sm{padding:4px 8px;font-size:12px}
+ #view{max-width:min(100%,calc(100dvh - 450px))!important;min-width:250px;border-width:2px}
+ #log{min-height:0;max-height:52px;overflow:auto;font-size:12.5px;padding:4px 8px;margin-top:6px}
+ .controls{flex-wrap:nowrap;align-items:center;gap:8px;margin-top:6px}
+ .pad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,44px);gap:4px;flex:none}
+ .pad button{font-size:18px}
+ .gbtns{grid-template-columns:repeat(3,1fr);gap:5px;min-width:0}
+ .gbtns .btn{min-height:42px;padding:3px 2px;border-radius:8px}
+ .gbtns .gi{font-size:17px}.gbtns .gl{font-size:10.5px}.gbtns .kh{display:none}
+ .overlay{padding:6px}
+ .cbox{grid-template-columns:minmax(0,1fr)!important;margin:4px auto!important;gap:8px!important;max-width:100%!important}
+ .cleft,.cright{min-width:0;padding:10px!important;border-width:2px!important}
+ #cEnemy{width:120px!important;height:120px!important}
+ .qhead{flex-wrap:wrap;gap:6px}
+ .question{font-size:18px;margin:6px 0 8px;overflow-wrap:anywhere}
+ .answers{grid-template-columns:minmax(0,1fr)!important}
+ .abil{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .doll{grid-template-columns:1fr 1.1fr 1fr;gap:6px}
+ .dslot{min-height:56px;padding:5px;gap:5px}.dslot .di{font-size:20px;width:22px}.dslot .dn{font-size:11px}.dslot .dl{font-size:10px}
+ #dollCv{width:120px;height:120px}
+ .dstat{font-size:11.5px}
+ .gtabs{margin-right:30px}.gtab{font-size:13px;min-height:42px}
+ .item{flex-wrap:wrap}.item .iact{width:100%;justify-content:flex-end}
+ .setgrid{grid-template-columns:1fr}
+}
+@media (max-width:380px){.gbtns .gl{font-size:9.5px}.pad{grid-template-columns:repeat(3,40px);grid-template-rows:repeat(2,40px)}}
+@media (pointer:coarse){.gbtns .kh{display:none}}
+`;document.body.appendChild(st);}
+
+// ---------- Stage 3 data: 12 armor sets ----------
+const SET_SLOTS=['helmet','armor','gloves','boots'];
+const SET_PIECE={helmet:'Helm',armor:'Chestplate',gloves:'Gauntlets',boots:'Boots'};
+const ARMOR_SETS=[
+ {id:'mud',n:'Mudguard',t:1,c:['#7a5230','#4e3420','#9be05a'],helm:'hood',pat:'belt',
+  b2:{fx:{gold:10},t:'+10% gold'},b4:{fx:{hp:8,def:2},t:'+8% max HP, +2 DEF'}},
+ {id:'iron',n:'Ironclad',t:2,c:['#9aa4b1','#5b6470','#ffd84a'],helm:'visor',pat:'trim',
+  b2:{fx:{def:3},t:'+3 DEF'},b4:{fx:{reduce:5,hp:6},t:'5% less damage taken, +6% max HP'}},
+ {id:'leaf',n:'Photosynthesis',t:4,c:['#3f9b3a','#245c22','#d6f56a'],helm:'crown',pat:'stripe',
+  b2:{fx:{heal:2},t:'heal 2% on correct answers'},b4:{fx:{hp:10,heal:2},t:'+10% max HP, heal 2% more'}},
+ {id:'tide',n:'Water Cycle',t:5,c:['#2a7fd0','#173f73','#9fe8ff'],helm:'crest',pat:'belt',
+  b2:{fx:{potion:20},t:'+20% potion healing'},b4:{fx:{dodge:6,xfocus:8},t:'+6% dodge, 8% bonus Focus chance'}},
+ {id:'magma',n:'Magma Core',t:7,c:['#d2401f','#5a1a10','#ffb02e'],helm:'horns',pat:'stars',
+  b2:{fx:{atk:6},t:'+6% ATK'},b4:{fx:{thorns:15,atk:4},t:'reflect 15% damage, +4% ATK'}},
+ {id:'frost',n:'Glacier',t:9,c:['#cfeaff','#4a8ad8','#ffffff'],helm:'crown',pat:'trim',
+  b2:{fx:{reduce:4},t:'4% less damage taken'},b4:{fx:{fstart:1,def:4},t:'+1 Focus at battle start, +4 DEF'}},
+ {id:'storm',n:'Stormforged',t:10,c:['#3a3a7a','#20204a','#ffe14a'],helm:'crest',pat:'stripe',
+  b2:{fx:{crit:5},t:'+5% crit chance'},b4:{fx:{critm:.3,crit:3},t:'crits hit +0.3× harder, +3% crit'}},
+ {id:'legion',n:'Roman Legion',t:12,c:['#b3202a','#d9a521','#f4e3b0'],helm:'crest',pat:'belt',
+  b2:{fx:{atk:5},t:'+5% ATK'},b4:{fx:{boss:15,def:3},t:'+15% damage to bosses, +3 DEF'}},
+ {id:'pharaoh',n:"Pharaoh's Gold",t:14,c:['#e0b23a','#1f5fa8','#fff1b0'],helm:'hood',pat:'stripe',
+  b2:{fx:{xp:10},t:'+10% XP'},b4:{fx:{undead:25,gold:15},t:'+25% damage to undead, +15% gold'}},
+ {id:'shadow',n:'Shadowveil',t:16,c:['#2a2238','#14101c','#c46bff'],helm:'hood',pat:'trim',
+  b2:{fx:{dodge:5},t:'+5% dodge'},b4:{fx:{leech:10,critm:.2},t:'heal 10% of damage dealt, crits +0.2×'}},
+ {id:'dragon',n:'Dragonscale',t:18,c:['#2f8a5a','#174a32','#ffcf4a'],helm:'horns',pat:'stars',
+  b2:{fx:{dragon:20},t:'+20% damage to dragons'},b4:{fx:{hp:12,reduce:5},t:'+12% max HP, 5% less damage taken'}},
+ {id:'cosmic',n:'Cosmic Atom',t:20,c:['#1a1a46','#5a3fc4','#9fe8ff'],helm:'crown',pat:'stars',
+  b2:{fx:{abil:15},t:'+15% ability damage'},b4:{fx:{streak:.04,crit:4,fstart:1},t:'streaks hit harder, +4% crit, +1 starting Focus'}}
+];
+const SETBY={};ARMOR_SETS.forEach(s=>SETBY[s.id]=s);
+const setName=s=>s.n+' Set';
+
+// ---- set pieces drop: Rare+ helmets/chests/gloves/boots can roll as a set piece ----
+{const _miS=makeItem;makeItem=function(slot,tier,rar){const it=_miS(slot,tier,rar);try{
+ if(it&&SET_SLOTS.includes(it.slot)&&it.rar>=2&&Math.random()<.32+.08*(it.rar-2)){
+  const el=ARMOR_SETS.filter(s=>s.t<=it.tier);if(el.length){
+   const recent=el.slice(-3).reverse(),w=[5,3,2].slice(0,recent.length);let S;
+   if(Math.random()<.2)S=pick(el);else{let r=Math.random()*w.reduce((a,b)=>a+b,0);S=recent[recent.length-1];for(let i=0;i<recent.length;i++){r-=w[i];if(r<0){S=recent[i];break;}}}
+   it.set=S.id;it.name=(it.rar===4?"Mr. Walker's ":'')+S.n+' '+SET_PIECE[it.slot];it.val=Math.round(it.val*1.15);}}}catch(e){}return it;};}
+
+function setCounts(h){h=h||hero;const n={};if(!h||!h.equip)return n;SET_SLOTS.forEach(s=>{const it=h.equip[s];if(it&&it.set&&SETBY[it.set]&&!(isDur(it)&&it.dur<=0))n[it.set]=(n[it.set]||0)+1;});return n;}
+function setBonusList(h){const out=[];Object.entries(setCounts(h)).forEach(([id,c])=>{const S=SETBY[id];if(c>=2)out.push(S.b2);if(c>=4)out.push(S.b4);});return out;}
+{const _gfS=gearFx;gearFx=function(k){let v=_gfS(k);if(!hero)return v;try{for(const b of setBonusList(hero))v+=b.fx[k]||0;}catch(e){}return v;};}
+
+// ---- set look on the hero sprite ----
+function gearLookOf(h){if(!h||!h.equip||h.hideSetLook)return'';const p=SET_SLOTS.map(s=>{const it=h.equip[s];return it&&it.set&&SETBY[it.set]?it.set:'';});
+ if(!p.some(Boolean))return'';const full=p.every(x=>x&&x===p[0])?1:0;return p[1]+'.'+p[0]+'.'+p[2]+'.'+p[3]+'.'+full;}
+function syncGearLook(h){h=h||hero;if(!h)return false;const g=gearLookOf(h);h.look=h.look||{};if((h.look._gear||'')===g)return false;if(g)h.look._gear=g;else delete h.look._gear;return true;}
+{const _hkS=heroKey;heroKey=function(cls,look){const k=_hkS(cls,look);const gl=look&&look._gear;if(!gl||!SPR[k])return k;const nk=k+'|G'+gl;if(SPR[nk])return nk;
+ try{const [cS,hS,gS,bS,full]=gl.split('.');const B=SPR[k],pal=Object.assign({},B.pal),g=B.map.map(r=>r.padEnd(12,'.').slice(0,12).split(''));
+  const set=(r,c,ch)=>{if(r>=0&&r<12&&c>=0&&c<12)g[r][c]=ch;},span=(r,a,b,ch)=>{for(let c=a;c<=b;c++)set(r,c,ch);};
+  const skip=new Set(['.','s','h','H','e','L','T','1','2','3','4','5','6','M','N','C','Q','J']);
+  // chest: recolor the two most common body colors
+  const C=SETBY[cS];if(C){const cnt={};for(let r=5;r<=9;r++)for(let c=0;c<12;c++){const ch=g[r][c];if(!skip.has(ch)&&pal[ch])cnt[ch]=(cnt[ch]||0)+1;}
+   const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);const m1=top[0],m2=top[1];
+   for(let r=5;r<=11;r++)for(let c=0;c<12;c++){if(g[r][c]===m1&&m1)g[r][c]='@';else if(g[r][c]===m2&&m2&&r<=9)g[r][c]='%';}
+   pal['@']=C.c[0];pal['%']=C.c[1];pal['&']=C.c[2];
+   if(C.pat==='belt'){for(let c=0;c<12;c++)if(g[8][c]==='@'||g[8][c]==='%')g[8][c]='&';}
+   else if(C.pat==='trim'){for(let c=0;c<12;c++)if(g[5][c]==='@'||g[5][c]==='%')g[5][c]='&';}
+   else if(C.pat==='stripe'){for(let r=5;r<=9;r++)for(const c of[5,6])if(g[r][c]==='@')g[r][c]='&';}
+   else if(C.pat==='stars'){[[6,4],[7,7],[8,5],[6,8],[9,6]].forEach(([r,c])=>{if(g[r][c]==='@'||g[r][c]==='%')g[r][c]='&';});}}
+  // helmet
+  const Hh=SETBY[hS];if(Hh){pal['^']=Hh.c[0];pal['`']=Hh.c[2];pal['|']=Hh.c[1];
+   if(Hh.helm==='hood'){span(0,4,7,'^');span(1,3,8,'^');for(let r=2;r<=4;r++){set(r,2,'^');set(r,9,'^');}set(2,3,'^');set(2,8,'^');set(1,5,'`');set(1,6,'`');}
+   else if(Hh.helm==='crown'){[4,6,8].forEach(c=>set(0,c-1,'`'));span(1,3,8,'^');set(1,4,'`');set(1,7,'`');}
+   else if(Hh.helm==='horns'){span(0,4,7,'^');span(1,3,8,'^');set(2,3,'^');set(2,8,'^');set(0,2,'`');set(1,2,'`');set(0,9,'`');set(1,9,'`');}
+   else if(Hh.helm==='crest'){span(0,4,7,'^');span(1,3,8,'^');set(2,3,'^');set(2,8,'^');set(0,5,'`');set(0,6,'`');set(1,5,'`');set(1,6,'`');}
+   else{span(0,4,7,'^');span(1,3,8,'^');set(2,3,'^');set(2,8,'^');span(2,4,7,'|');}}
+  // gloves: hands (skin pixels on the body) take the glove color
+  const G=SETBY[gS];if(G){pal['=']=G.c[1]===G.c[0]?shade(G.c[0],.7):G.c[1];for(let r=5;r<=9;r++)for(let c=0;c<12;c++)if(g[r][c]==='s')g[r][c]='=';}
+  // boots: feet rows
+  const Bt=SETBY[bS];if(Bt){pal['~']=shade(Bt.c[1],.9);for(let r=10;r<=11;r++)for(let c=0;c<12;c++){const ch=g[r][c];if(ch!=='.'&&!/[1-6]/.test(ch)&&pal[ch])g[r][c]='~';}}
+  // full set: shoulder gems in the accent color
+  if(full==='1'&&C){[[5,2],[5,9]].forEach(([r,c])=>{if(g[r][c]!=='.')g[r][c]='&';});}
+  SPR[nk]={map:g.map(r=>r.join('')),pal};return nk;}catch(e){return k;}};}
+{const _shS=saveHero;saveHero=function(){try{if(hero)syncGearLook(hero);}catch(e){}return _shS.apply(this,arguments);};}
+
+// ---- small helpers ----
+const gwPow=it=>it?itemPower(it)*(isDur(it)&&(ensureDur(it),it.dur<=0)?.2:1):0;
+function gwEquip(id){const i=hero.bag.findIndex(x=>x.id===id);if(i<0)return false;const it=hero.bag[i],old=hero.equip[it.slot],oldMax=maxHP();hero.bag.splice(i,1);if(old)hero.bag.push(old);hero.equip[it.slot]=it;hero.hp=Math.max(1,Math.min(maxHP(),hero.hp+(maxHP()-oldMax)));syncGearLook();saveHero();snd('coin');try{checkAch();}catch(e){}return true;}
+function gwUnequip(slot){const it=hero.equip[slot];if(!it)return false;if(hero.bag.length>=36){toast('🎒 Your bag is full! Sell something first.');return false;}if(slot==='weapon'){toast('⚔️ You need a weapon equipped!');return false;}const oldMax=maxHP();hero.equip[slot]=null;hero.bag.push(it);hero.hp=Math.max(1,Math.min(maxHP(),hero.hp+(maxHP()-oldMax)));syncGearLook();saveHero();return true;}
+function bestLoadout(h){h=h||hero;const by={};SLOTS.forEach(s=>by[s]=[]);SLOTS.forEach(s=>{if(h.equip[s])by[s].push(h.equip[s]);});h.bag.forEach(it=>{if(by[it.slot])by[it.slot].push(it);});
+ const greedy={};SLOTS.forEach(s=>{greedy[s]=by[s].slice().sort((a,b)=>gwPow(b)-gwPow(a))[0]||null;});
+ const score=c=>{let v=0;SLOTS.forEach(s=>v+=gwPow(c[s]));const n={};SET_SLOTS.forEach(s=>{const it=c[s];if(it&&it.set)n[it.set]=(n[it.set]||0)+1;});Object.values(n).forEach(x=>{if(x>=2)v+=14;if(x>=4)v+=34;});return v;};
+ let best=greedy,bs=score(greedy);
+ ARMOR_SETS.forEach(S=>{const c=Object.assign({},greedy);let k=0;SET_SLOTS.forEach(s=>{const p=by[s].filter(it=>it.set===S.id).sort((a,b)=>gwPow(b)-gwPow(a))[0];if(p){c[s]=p;k++;}});if(k>=2){const v=score(c);if(v>bs){bs=v;best=c;}}});
+ return best;}
+function gearUpgrades(h){h=h||hero;if(!h||!h.equip||!h.bag)return 0;const b=bestLoadout(h);let n=0;SLOTS.forEach(s=>{if(b[s]&&b[s]!==h.equip[s])n++;});return n;}
+function autoEquip(){if(!hero)return 0;const b=bestLoadout(hero),oldMax=maxHP();let n=0;const all=hero.bag.slice();SLOTS.forEach(s=>{if(hero.equip[s])all.push(hero.equip[s]);});
+ SLOTS.forEach(s=>{if(b[s]&&b[s]!==hero.equip[s])n++;});if(!n)return 0;
+ const chosen=new Set(SLOTS.map(s=>b[s]).filter(Boolean));SLOTS.forEach(s=>hero.equip[s]=b[s]||hero.equip[s]||null);hero.bag=all.filter(it=>!chosen.has(it)&&!SLOTS.some(s=>hero.equip[s]===it));
+ hero.hp=Math.max(1,Math.min(maxHP(),hero.hp+(maxHP()-oldMax)));syncGearLook();saveHero();snd('level');try{checkAch();}catch(e){}return n;}
+
+// ---- "new" tracking for loot badges ----
+function bagNewIds(h){h=h||hero;if(!h||!h.bag)return[];if(!Array.isArray(h.seenIds)){h.seenIds=h.bag.map(i=>i.id);return[];}const s=new Set(h.seenIds);return h.bag.filter(i=>!s.has(i.id)).map(i=>i.id);}
+function markBagSeen(){if(!hero)return;hero.seenIds=hero.bag.map(i=>i.id);}
+let GV_NEW=new Set();
+
+// ---- item card: set line + NEW tag ----
+{const _icS=itemCard;itemCard=function(it,mode){let h=_icS(it,mode);if(!it)return h;try{
+ if(it.set&&SETBY[it.set]){const S=SETBY[it.set],c=setCounts(hero)[S.id]||0;const add=`<div class="setline" style="color:${S.c[2]==='#ffffff'?'#bfe6ff':S.c[2]}">✨ ${esc(setName(S))} piece <span class="mini">(${c}/4 worn · 2: ${esc(S.b2.t)} · 4: ${esc(S.b4.t)})</span></div>`;const k=h.indexOf('</div><div class="iact">');if(k>=0)h=h.slice(0,k)+add+h.slice(k);}
+ if(mode==='bag'&&GV_NEW.has(it.id)){h=h.replace('<div class="item"','<div class="item isnew"').replace(/(font-weight:900">)([^<]*)(<\/div>)/,'$1$2<span class="newtag2">NEW</span>$3');}}catch(e){}return h;};}
+
+// ---------- Stage 2: Gear / Bag / Sets window ----------
+let gearSel=null;
+function gvTabs(on){const nb=bagNewIds().length;return`<div class="gtabs"><button class="gtab${on==='gear'?' on':''}" data-gv="gear">🛡️ Gear</button><button class="gtab${on==='bag'?' on':''}" data-gv="bag">🎒 Bag (${hero.bag.length}/36)${nb&&on!=='bag'?`<span class="nbadge">${nb}</span>`:''}</button><button class="gtab${on==='sets'?' on':''}" data-gv="sets">✨ Sets</button></div>`;}
+function gvBindTabs(){document.querySelectorAll('#modalBody [data-gv]').forEach(b=>b.onclick=()=>{const v=b.dataset.gv;if(v==='gear')openGear();else if(v==='bag')openBag();else openSets();});}
+function gvStats(){return`<div class="statrow"><span>❤️ ${hero.hp}/${maxHP()} HP</span><span>⚔️ ${atk()} ATK</span><span>🛡️ ${def()} DEF</span><span>🎯 ${crit()}% CRIT</span><span>🪙 ${hero.gold}</span></div>`;}
+function dslotHTML(s){const it=hero.equip[s],best=bestLoadout(hero)[s];const up=best&&best!==it?'<span class="upa" title="Better item in your bag">▲</span>':'';
+ if(!it)return`<button class="dslot empty${gearSel===s?' sel':''}" data-ds="${s}">${up}<span class="di">${SLOTICON[s]}</span><span><span class="dn">Empty</span><span class="dl">${SLOTNAME[s]}</span></span></button>`;
+ const R=RAR[it.rar],S=it.set&&SETBY[it.set];let bar='';if(isDur(it)){ensureDur(it);const p=Math.max(0,it.dur/it.maxDur);bar=`<div class="dbar"><i style="width:${p*100}%;background:${durCol(it)}"></i></div>`;}
+ return`<button class="dslot${gearSel===s?' sel':''}" data-ds="${s}" style="border-color:${R.c}">${S?`<span class="sdot" style="background:${S.c[0]}" title="${esc(setName(S))}"></span>`:''}${up}<span class="di">${SLOTICON[s]}</span><span style="flex:1;min-width:0"><span class="dn" style="color:${R.c}">${esc(it.name)}</span><span class="dl">${SLOTNAME[s]}${it.plus?' +'+it.plus:''}</span>${bar}</span></button>`;}
+function setBoxHTML(){const n=setCounts(hero),ids=Object.keys(n);if(!ids.length)return`<div class="setbox"><b>✨ Set bonuses</b><div class="mini">Wear 2 or 4 pieces from the same armor set (helmet, chest, gloves, boots) to unlock bonuses and a new look! Check the ✨ Sets tab.</div></div>`;
+ return`<div class="setbox"><b>✨ Set bonuses</b>${ids.map(id=>{const S=SETBY[id],c=n[id];return`<div style="margin-top:4px"><b style="color:${S.c[0]==='#1a1a46'||S.c[0]==='#2a2238'?S.c[2]:S.c[0]}">${esc(setName(S))} (${c}/4)</b><div class="${c>=2?'on':'off'}">${c>=2?'✔':'○'} 2 pieces: ${esc(S.b2.t)}</div><div class="${c>=4?'on':'off'}">${c>=4?'✔':'○'} 4 pieces: ${esc(S.b4.t)} + full-set glow</div></div>`;}).join('')}</div>`;}
+function openGear(){if(!hero||combatOpen)return;syncGearLook();const ups=gearUpgrades(),k=hero.kits||0,full=gearLookOf(hero).endsWith('.1');const fullS=full&&SETBY[hero.equip.armor.set];
+ const L=['helmet','armor','gloves','boots'],R=['weapon','ring','charm'];
+ let det='';if(gearSel){const s=gearSel,it=hero.equip[s],opts=hero.bag.filter(x=>x.slot===s).sort((a,b)=>gwPow(b)-gwPow(a));
+  det=`<div class="gdet" id="gdet"><h3 style="margin:6px 0">${SLOTICON[s]} ${SLOTNAME[s]}</h3>${it?itemCard(it,'eq').replace('<span class="mini">Equipped</span>',s!=='weapon'?`<button class="btn sm" data-uneq="${s}">Take off</button>`:'<span class="mini">Equipped</span>'):'<p class="mini">Nothing equipped here.</p>'}
+  <h3 style="margin:10px 0 4px">In your bag <span class="mini">(${opts.length})</span></h3>${opts.map(x=>itemCard(x,'bag')).join('')||'<p class="mini">No '+SLOTNAME[s]+' items in your bag. Defeat monsters and open chests to find more!</p>'}</div>`;}
+ openModal(`<h2 class="px">🛡️ Gear</h2>${gvTabs('gear')}${gvStats()}
+ <div class="doll"><div class="dcol">${L.map(dslotHTML).join('')}</div>
+ <div class="dmid"><canvas id="dollCv" width="168" height="168"${fullS?` class="full" style="--setc:${fullS.c[2]}"`:''}></canvas><div class="px" style="font-size:11px;text-align:center">${esc(hero.name)}</div><div class="dstat"><span>⚔️ GS ${gearScore()}</span><span>Lv ${hero.level}</span></div>${fullS?`<div class="mini" style="text-align:center;color:${fullS.c[2]==='#ffffff'?'#bfe6ff':fullS.c[2]};font-weight:900">✨ Full ${esc(setName(fullS))}!</div>`:''}</div>
+ <div class="dcol">${R.map(dslotHTML).join('')}</div></div>
+ <p class="mini" style="text-align:center;margin:2px 0">Tap a slot to see your item and swap it for something in your bag.</p>
+ <div class="gact"><button class="btn${ups?' gold pulse':''}" id="gvAuto">⚡ Auto-Equip Best${ups?` (${ups} upgrade${ups>1?'s':''})`:''}</button><button class="btn${k?' gold':''}" id="gvKit" ${k?'':'disabled'}>🔧 Use Repair Kit (${k})</button></div>
+ ${typeof gearStatusHTML==='function'?gearStatusHTML():''}${setBoxHTML()}
+ <label class="mini" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="gvLook" ${hero.hideSetLook?'':'checked'}> Show my armor set look on my hero</label>${det}`);
+ gvBindTabs();const cv=$('#dollCv');if(cv){sprToCanvas(cv,HK());auraEl(cv,hero);}
+ document.querySelectorAll('#modalBody [data-ds]').forEach(b=>b.onclick=()=>{gearSel=gearSel===b.dataset.ds?null:b.dataset.ds;openGear();if(gearSel){const d=$('#gdet');if(d)d.scrollIntoView({behavior:'smooth',block:'start'});}});
+ document.querySelectorAll('#modalBody [data-eq]').forEach(b=>b.onclick=()=>{if(gwEquip(b.dataset.eq))openGear();});
+ document.querySelectorAll('#modalBody [data-sell]').forEach(b=>b.onclick=()=>{const i=hero.bag.findIndex(x=>x.id===b.dataset.sell);if(i<0)return;hero.gold+=hero.bag[i].val;hero.bag.splice(i,1);saveHero();snd('coin');openGear();});
+ document.querySelectorAll('#modalBody [data-uneq]').forEach(b=>b.onclick=()=>{if(gwUnequip(b.dataset.uneq))openGear();});
+ $('#gvAuto').onclick=()=>{const n=autoEquip();toast(n?`⚡ Equipped ${n} better item${n>1?'s':''}!`:'✔ You are already wearing your best gear!');openGear();};
+ $('#gvKit').onclick=()=>{if(typeof useKit==='function'&&useKit())openGear();else $('#gvKit').textContent='Your gear is already in perfect shape!';};
+ $('#gvLook').onchange=e=>{hero.hideSetLook=!e.target.checked;syncGearLook();saveHero();openGear();};
+ wkBadges();}
+function renderBag(){const nb=GV_NEW;const list=hero.bag.slice().sort((a,b)=>(nb.has(b.id)-nb.has(a.id))||b.rar-a.rar||b.tier-a.tier);
+ openModal(`<h2 class="px">🎒 Bag</h2>${gvTabs('bag')}${gvStats()}
+ <div class="gact"><button class="btn" id="gvAuto2">⚡ Auto-Equip Best${gearUpgrades()?` (${gearUpgrades()})`:''}</button>${hero.bag.some(i=>i.rar===0)?'<button class="btn" id="sellCommon">🪙 Sell all Common</button>':''}</div>
+ <h3>Bag (${hero.bag.length}/36)${nb.size?` <span class="newtag2">${nb.size} NEW</span>`:''}</h3><div>${list.map(it=>itemCard(it,'bag')).join('')||'<p class="mini">Your bag is empty. Open chests and defeat monsters to find loot!</p>'}</div>`);
+ gvBindTabs();
+ document.querySelectorAll('#modalBody [data-eq]').forEach(b=>b.onclick=()=>{if(gwEquip(b.dataset.eq))renderBag();});
+ document.querySelectorAll('#modalBody [data-sell]').forEach(b=>b.onclick=()=>{const i=hero.bag.findIndex(x=>x.id===b.dataset.sell);if(i<0)return;hero.gold+=hero.bag[i].val;hero.bag.splice(i,1);saveHero();snd('coin');renderBag();});
+ const sc=$('#sellCommon');if(sc)sc.onclick=()=>{hero.bag=hero.bag.filter(it=>{if(it.rar===0){hero.gold+=it.val;return false;}return true;});saveHero();snd('coin');renderBag();};
+ $('#gvAuto2').onclick=()=>{const n=autoEquip();toast(n?`⚡ Equipped ${n} better item${n>1?'s':''}!`:'✔ You are already wearing your best gear!');renderBag();};
+ wkBadges();}
+openBag=function(){if(!hero||combatOpen)return;GV_NEW=new Set(bagNewIds());markBagSeen();saveHero();renderBag();};
+function openSets(){if(!hero||combatOpen)return;const own={};hero.bag.concat(SLOTS.map(s=>hero.equip[s]).filter(Boolean)).forEach(it=>{if(it.set){own[it.set]=own[it.set]||new Set();own[it.set].add(it.slot);}});const worn=setCounts(hero);
+ openModal(`<h2 class="px">✨ Armor Sets</h2>${gvTabs('sets')}<p class="mini">Set pieces are Rare or better helmets, chest armor, gloves and boots. Each set changes how your hero looks. Wear <b>2 pieces</b> for a bonus and <b>all 4</b> for a bigger bonus and a glowing look! Later dungeons drop the stronger sets.</p>
+ <div class="setgrid">${ARMOR_SETS.map((S,i)=>{const o=own[S.id]||new Set(),w=worn[S.id]||0,locked=!o.size;return`<div class="setcard${locked?' locked':''}"><canvas width="84" height="84" data-set="${S.id}"></canvas><div style="min-width:0"><div class="sn" style="color:${['#1a1a46','#2a2238','#3a3a7a'].includes(S.c[0])?S.c[2]:S.c[0]}">${esc(S.n)}</div><div class="sp">Drops from Dungeon ${S.t}+${w?` · <b style="color:#5be37d">wearing ${w}/4</b>`:''}</div>
+ <div class="pcs">${SET_SLOTS.map(s=>`<span class="${o.has(s)?'have':''}" title="${SLOTNAME[s]}">${SLOTICON[s]}</span>`).join('')}<span class="mini" style="opacity:1;font-size:11px;align-self:center">${o.size}/4 found</span></div>
+ <div class="sb"><b>2:</b> ${esc(S.b2.t)}<br><b>4:</b> ${esc(S.b4.t)}</div></div></div>`;}).join('')}</div>`);
+ gvBindTabs();const lk=lookOf(hero);document.querySelectorAll('#modalBody [data-set]').forEach(c=>{const id=c.dataset.set;sprToCanvas(c,heroKey(hero.cls,Object.assign({},lk,{_gear:[id,id,id,id,1].join('.')})));});}
+
+// ---------- Stage 1: buttons, badges, phone touches ----------
+// in-dungeon buttons: add 🛡️ Gear, split icon / label / key hint so they can be the same size
+{const tal=$('#gTal');if(tal&&!$('#gGear'))tal.insertAdjacentHTML('afterend','<button class="btn" id="gGear">🛡️ Gear (G)</button>');
+ const gg=$('#gGear');if(gg)gg.onclick=()=>openGear();
+ document.querySelectorAll('.gbtns .btn').forEach(b=>{const t=b.textContent.trim(),m=t.match(/^(\S+)\s*(.*?)\s*(\([A-Z]\))?$/);if(!m)return;const lab=m[2]||(b.id==='gMusic'?'Music':'');b.innerHTML=`<span class="gi">${m[1]}</span>${lab?`<span class="gl">${esc(lab)}</span>`:''}${m[3]?`<span class="kh">${m[3]}</span>`:''}`;});
+ if(typeof A11Y_IDS!=='undefined')A11Y_IDS.gGear='Gear';
+ window.addEventListener('keydown',e=>{if(screen!=='game'||combatOpen||modalOpen)return;const tag=(e.target.tagName||'').toLowerCase();if(tag==='input'||tag==='textarea')return;if(e.key==='g'||e.key==='G')openGear();});}
+// camp: separate Gear and Bag buttons
+{const hc=CAMP_CATS.find(c=>c.k==='hero');if(hc&&!hc.ids.includes('bGear')){hc.ids.splice(hc.ids.indexOf('bBag')<0?1:hc.ids.indexOf('bBag'),0,'bGear');}}
+{const _rcGv=renderCamp;renderCamp=function(){const r=_rcGv.apply(this,arguments);try{if(hero){const b=$('#bBag');if(b&&!$('#bGear')){b.textContent='🎒 Bag';b.insertAdjacentHTML('beforebegin','<button class="btn" id="bGear">🛡️ Gear</button>');$('#bGear').onclick=()=>openGear();}
+  const w=$('#bWorld');if(w){const row=w.closest('.row');if(row&&!row.querySelector('#campCats'))row.classList.add('wkTop');}}}catch(e){}Promise.resolve().then(()=>setTimeout(wkBadges,0));return r;};}
+// party camp bag buttons still work (they call openBag)
+// badges
+function wkBadge(el,n,cls){if(!el)return;let b=el.querySelector(':scope>.nbadge');if(!n){if(b)b.remove();el.classList.remove('hasNew');return;}
+ if(!b){b=document.createElement('span');b.className='nbadge'+(cls?' '+cls:'');el.appendChild(b);}const t=String(n);if(b.textContent!==t){b.textContent=t;b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop');}if(cls!=='up')el.classList.add('hasNew');}
+function wkBadges(){try{if(!hero){['#gBag','#bBag','#gTal','#bTal','#gGear','#bGear'].forEach(s=>wkBadge($(s),0));return;}
+ const nb=bagNewIds().length,tp=pendingPicks(),up=gearUpgrades();
+ const bagOpen=modalOpen&&$('#modalBody .gtab.on[data-gv="bag"]');
+ wkBadge($('#gBag'),bagOpen?0:nb);wkBadge($('#bBag'),bagOpen?0:nb);wkBadge($('#gTal'),tp,'tal');wkBadge($('#bTal'),tp,'tal');wkBadge($('#gGear'),up?'▲'+up:0,'up');wkBadge($('#bGear'),up?'▲'+up:0,'up');
+ const ht=document.querySelector('#campCats .campTab[data-cat="hero"]');if(ht)wkBadge(ht,(nb+tp+up)||0);
+ if(syncGearLook()){try{if(screen==='camp'&&$('#campHero'))sprToCanvas($('#campHero'),HK());if(screen==='game')renderHUD();}catch(e){}}}catch(e){}}
+setInterval(wkBadges,700);
+{const _rhGv=renderHUD;renderHUD=function(){const r=_rhGv.apply(this,arguments);wkBadges();return r;};}
+{const _cmGv=closeModal;closeModal=function(){GV_NEW=new Set();return _cmGv.apply(this,arguments);};}
+// Spanish labels for the new buttons
+try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","✨ Sets":"✨ Conjuntos","✨ Armor Sets":"✨ Conjuntos de armadura","⚡ Auto-Equip Best":"⚡ Equipar lo mejor","Gear":"Equipo","Bag":"Bolsa","Talents":"Talentos","Potion":"Poción","Help":"Ayuda","Music":"Música","Retreat":"Retirarse","✨ Set bonuses":"✨ Bonos de conjunto","Tap a slot to see your item and swap it for something in your bag.":"Toca una ranura para ver tu objeto y cambiarlo por algo de tu bolsa.","Show my armor set look on my hero":"Mostrar el aspecto del conjunto en mi héroe","Take off":"Quitar"});}catch(e){}
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
@@ -7059,6 +7332,13 @@ if(SHOWCASE){try{store.set=function(){};settings.sound=false;settings.music=fals
    if(Cb.locked){const b=nb();if(b)b.click();return;}
    if(Cb.readyAt&&Cb.readyAt>Date.now())return;
    hero.hp=maxHP();answer(Cb.order.indexOf(0));}catch(e){}},2600);},600);}
+// ===================== V40 DEMO: armor sets in the free demo =====================
+// The demo caps gear at green (Uncommon), so the first few sets can drop as green pieces; the rest are shown as full-version only.
+try{if(typeof DEMO_RAR!=='undefined'&&typeof ARMOR_SETS!=='undefined'){
+ const DEMO_SETS=ARMOR_SETS.filter(s=>s.t<=DEMO_D).map(s=>s.id);
+ {const _mDs=makeItem;makeItem=function(slot,tier,rar){const it=_mDs(slot,tier,rar);try{if(it&&!it.set&&SET_SLOTS.includes(it.slot)&&it.rar>=1&&Math.random()<.25){const el=ARMOR_SETS.filter(s=>DEMO_SETS.includes(s.id)&&s.t<=it.tier);if(el.length){const S=el[el.length-1-Math.floor(Math.random()*Math.min(2,el.length))];it.set=S.id;it.name=S.n+' '+SET_PIECE[it.slot];}}}catch(e){}return it;};}
+ {const _osD=openSets;openSets=function(){_osD.apply(this,arguments);try{document.querySelectorAll('#modalBody .setcard').forEach(c=>{const cv=c.querySelector('[data-set]');if(cv&&!DEMO_SETS.includes(cv.dataset.set)){c.classList.add('locked');const sp=c.querySelector('.sp');if(sp)sp.textContent='🔒 Full version only';}});const p=document.querySelector('#modalBody > p.mini');if(p)p.insertAdjacentHTML('beforeend',' <b>In the free demo, the first '+DEMO_SETS.length+' sets drop as green (Uncommon) gear.</b>');}catch(e){}};}
+}}catch(e){console.warn('demo sets',e);}
 </script>
 </body>
 </html>
