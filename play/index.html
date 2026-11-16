@@ -7318,6 +7318,24 @@ try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","�
  setInterval(()=>{try{if(D&&D.world&&!combatOpen&&MU.song&&/^__long_world\d$/.test(MU.song)){const k=getSong('world'+regionNow());if(k&&k!==MU.song)_setMusic(k);}}catch(e){}},1000);
 })();
 
+// ===================== V44: BALANCE — monsters scale with gear only; crit and niche talents fixed =====================
+(function(){
+ // 1) Monster scaling looks at GEAR only (not talents, pets, race or buffs), and grows a bit slower than your gear,
+ //    so upgrades and +HP / +Attack talents finally feel like upgrades.
+ gearScale=function(){if(!hero)return{hp:1,am:1,ad:0};const list=PARTY||[hero];let hp=0,am=0,ad=0;
+  list.forEach(p=>withHero(p,()=>{const C=CL(),L=hero.level-1,a0=C.atk+L*C.atkG+3,h0=C.hp+L*C.hpG,d0=C.def+L*C.defG+2;
+   const ga=C.atk+L*C.atkG+gearSum('atk'),gh=C.hp+L*C.hpG+gearSum('hp'),gd=C.def+L*C.defG+gearSum('def');
+   hp+=Math.max(1,ga/a0);am+=Math.max(1,gh/h0);ad+=Math.max(0,gd-d0);}));
+  const n=list.length;return{hp:Math.pow(hp/n,.85),am:Math.pow(am/n,.75),ad:ad/n*.4};};
+ // 2) + 3) talent fixes
+ const fix=(cls,name,desc,fx,es)=>{const tr=TREES[cls];if(!tr)return;tr.forEach(r=>{if(r.kind!=='talent')return;r.opts.forEach(o=>{if(o.name===name){if(es&&typeof ES==='object')ES[desc]=es;o.desc=desc;Object.assign(o.fx,fx);}});});};
+ fix('warrior',"Titan's Grip",'+15% critical hit chance, and critical hits deal 2.5× instead of 1.75×.',{crit:15},'+15% de probabilidad de golpe crítico, y los críticos hacen 2.5× en vez de 1.75×.');
+ fix('mage','Overload','+15% critical hit chance, and critical hits deal 2.5× instead of 1.75×.',{crit:15},'+15% de probabilidad de golpe crítico, y los críticos hacen 2.5× en vez de 1.75×.');
+ fix('ranger','Dragon Hunter','+40% damage to dragons and +8% attack.',{atk:8},'+40% de daño a los dragones y +8% de ataque.');
+ fix('mage','Dragonfire','Fireball is no longer resisted, +25% damage to dragons, and +8% attack.',{atk:8},'La Bola de fuego ya no se resiste, +25% de daño a los dragones y +8% de ataque.');
+ fix('mage','Necromancer Bane','+40% damage to undead and +8% attack.',{atk:8},'+40% de daño a los no muertos y +8% de ataque.');
+})();
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
