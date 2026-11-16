@@ -89,7 +89,7 @@ function renderSt(m){const cut=days?Date.now()-days*864e5:0;const S=data.stats.f
  ${bars('🌐 Played on',count(S.filter(r=>r.ev==='open'),'src',{web:'Website',file:'Downloaded file'}),0)}`;
  $('#dd').onchange=e=>{days=+e.target.value;render();};}
 function csv(name,rows){const c=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';const blob=new Blob(['﻿'+rows.map(r=>r.map(c).join(',')).join('\r\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'-'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
-auth.onAuthStateChanged(u=>{authBar(u);subs.forEach(f=>f());subs=[];data={feedback:[],interest:[],stats:[]};err={};
+auth.onAuthStateChanged(u=>{if(u&&u.isAnonymous)u=null;authBar(u);subs.forEach(f=>f());subs=[];data={feedback:[],interest:[],stats:[]};err={};
  if(!u){$('#tabs').innerHTML='';$('#main').innerHTML='<div class="empty">Sign in to see your inbox.</div>';return;}
  $('#main').innerHTML='<div class="empty">Loading…</div>';
  [['feedback',500],['interest',500],['stats',5000]].forEach(([c,n])=>subs.push(db.collection(c).orderBy('t','desc').limit(n).onSnapshot(s=>{data[c]=s.docs.map(d=>Object.assign({id:d.id},d.data()));delete err[c];render();},e=>{err[c]=e.code||e.message;render();})));});
