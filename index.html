@@ -188,6 +188,7 @@ $('fv').addEventListener('submit',async e=>{e.preventDefault();const em=$('fvEma
  const fields={};Object.entries(f).forEach(([k,val])=>fields[k]={stringValue:val});fields.t={timestampValue:new Date().toISOString()};
  $('fvGo').disabled=true;out.style.color='var(--mute)';out.textContent='Sending…';
  try{const r=await fetch(U,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});if(!r.ok)throw new Error(r.status);
+  fetch('https://formsubmit.co/ajax/schoolhiddentreasuregame@gmail.com',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({_subject:'Hidden Treasure Quest request'+($('fvPlan')&&$('fvPlan').value?' - '+$('fvPlan').value:''),_template:'table',_captcha:'false',_replyto:f.email,Name:f.name,Email:f.email,Role:f.role,School:f.school,Grades:f.grades,Message:f.msg,From:'Website'})}).catch(()=>{});
   try{localStorage.setItem('htq_fvSent',String(Date.now()));}catch(x){}out.style.color='var(--green)';out.textContent='🎉 Thanks! Your request was sent. You will hear back by email.';$('fv').reset();}
  catch(x){out.style.color='var(--red)';out.textContent='Could not send. Check your internet connection and try again.';}
  $('fvGo').disabled=false;});})();
