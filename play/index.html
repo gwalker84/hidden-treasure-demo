@@ -45,7 +45,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges}
 .cls canvas{display:block;margin:0 auto;width:72px;height:72px}.cls .px{text-align:center}
 .cls.sel{border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,207,74,.25),0 0 30px rgba(255,207,74,.2)}
 .cls>.mini{margin:5px 0}.cstats{display:flex;gap:8px;margin:8px 0;font-weight:900;font-size:14px;flex-wrap:wrap}.pas{color:#ffd98a}
-input[type=text],textarea{width:100%;background:#0b0910;color:var(--text);border:2px solid #5b4b80;border-radius:9px;padding:12px;font-size:17px;font-family:inherit}
+input[type=text],input[type=email],textarea{width:100%;background:#0b0910;color:var(--text);border:2px solid #5b4b80;border-radius:9px;padding:12px;font-size:17px;font-family:inherit}
 textarea{font-size:14px}
 #nameErr{color:#ff8a8a;font-weight:800;min-height:20px}
 /* camp */
@@ -7296,11 +7296,12 @@ function openSurvey(){let role='';
 {const _gcS=goCamp;goCamp=function(f){_gcS(f);try{if(hero&&(hero.cleared||[]).includes(1)&&!localStorage.getItem('htqDemo_surveyed')){localStorage.setItem('htqDemo_surveyed','1');setTimeout(()=>{if(!modalOpen)openSurvey();},1600);}}catch(e){}};}
 function openFull(from){stat('full',{});let role='teacher';
  openModal(`<h2 class="px gold">⭐ Get the Full Version</h2><p>The full <b>Hidden Treasure Quest</b> has all 20 dungeons and bosses, Rare to Legendary gear, the Endless Tower, Raids, New Game+, and a Teacher Hub with progress reports.</p>
+ <p style="margin:6px 0"><b>From $19.99.</b> <a class="btn sm gold" href="../#full" target="_top" style="text-decoration:none;margin-left:6px">💲 See plans &amp; prices</a></p>
  <div class="row" id="fvR">${[['teacher','🍎 Teacher'],['admin','🏫 School leader'],['parent','🏠 Parent'],['student','🎒 Student']].map(([k,l])=>`<button class="btn sm${k===role?' gold':''}" data-fvr="${k}">${l}</button>`).join('')}</div>
  <div id="fvForm"></div>`);
  const draw=()=>{document.querySelectorAll('[data-fvr]').forEach(b=>b.classList.toggle('gold',b.dataset.fvr===role));const box=$('#fvForm');
   if(role==='student'){box.innerHTML='<p>🎒 Awesome that you want more! Ask your <b>teacher</b> or a <b>parent</b> to tap this button — they can ask for the full version for your class.</p><div class="row"><button class="btn" id="fvX">OK</button></div>';$('#fvX').onclick=closeModal;return;}
-  box.innerHTML=`<p class="mini">Leave your info and the game maker will contact you. (For adults only.)</p>
+  box.innerHTML=`<p class="mini">Leave your info and the game maker will contact you, or email <b>schoolhiddentreasuregame@gmail.com</b>. (For adults only.)</p>
   <input type="text" id="fvName" maxlength="80" placeholder="Your name" style="width:100%;margin:3px 0"><input type="text" id="fvSchool" maxlength="120" placeholder="School and district (optional)" style="width:100%;margin:3px 0">
   <input type="email" id="fvEmail" maxlength="120" placeholder="Email (required)" style="width:100%;margin:3px 0"><input type="text" id="fvGrades" maxlength="60" placeholder="Grades / subjects you teach (optional)" style="width:100%;margin:3px 0">
   <textarea id="fvMsg" rows="3" maxlength="800" placeholder="Anything else? (optional)" style="width:100%;margin:3px 0"></textarea>
