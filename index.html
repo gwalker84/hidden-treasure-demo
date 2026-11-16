@@ -137,17 +137,17 @@ nav .links a.pr{display:inline}@media (max-width:820px){.sets{grid-template-colu
   <div class="plan best"><span class="tag">LAUNCH PRICE</span><h3>Classroom Edition</h3><p class="who">For one teacher · pay once</p>
    <div class="amt">$19.99 <small>one-time</small></div><div class="was">Regular price $24.99</div>
    <ul><li>All 20 dungeons and bosses</li><li>Gear up to Legendary + all 12 armor sets</li><li>Teacher Hub, assignments & reports</li><li>Plays offline · no student accounts</li></ul>
-   <button class="btn gold" type="button" data-plan="Classroom Edition ($19.99 one-time)">Get Classroom Edition</button></div>
+   <button class="btn gold" type="button" data-price="pri_01m7h20wqrt7wepqf2j1nn62xc" data-fb="Classroom Edition ($19.99 one-time)">🛒 Buy Classroom Edition</button></div>
   <div class="plan"><h3>Online Plan</h3><p class="who">For one teacher · yearly</p>
    <div class="amt">$29.99 <small>per year</small></div><div class="was"></div>
    <ul><li>Everything in Classroom Edition</li><li>Online class features & leaderboards</li><li>New dungeons & question sets as they come out</li></ul>
-   <button class="btn" type="button" data-plan="Online Plan ($29.99/year)">Get the Online Plan</button></div>
+   <button class="btn" type="button" data-price="pri_01m7h22rd9456h2v44w799d678" data-fb="Online Plan ($29.99/year)">🛒 Buy the Online Plan</button></div>
   <div class="plan"><h3>School License</h3><p class="who">For every teacher in one building</p>
    <div class="amt">$199 <small>per year</small></div><div class="was">Larger schools: ask for a quote</div>
    <ul><li>Online Plan for every teacher</li><li>One invoice · purchase orders accepted</li><li>Free 30-day trial for your school</li></ul>
-   <button class="btn" type="button" data-plan="School License ($199/year)">Ask about a School License</button></div>
+   <button class="btn" type="button" data-price="pri_01m7h24jb2w35vg6bc41f51t4d" data-fb="School License ($199/year)">🛒 Buy by card · $199</button><button class="btn sm" type="button" data-plan="School License ($199/year)" style="margin-top:8px">📄 Purchase order or quote</button></div>
  </div>
- <p class="paynote">Online checkout is coming soon. For now, pick a plan and send the form below — you'll get an email with how to pay and your access.</p>
+ <p class="paynote">🔒 Secure checkout by Paddle: card, PayPal, Apple Pay or Google Pay. Your school code arrives by email within 1 school day. Paying by purchase order or need a quote? Use the form below.</p><div class="msg" id="payOut" role="status" style="margin:-10px 0 18px"></div>
  <form class="formcard" id="fv" novalidate>
   <div class="row2"><div><label for="fvName">Your name</label><input id="fvName" maxlength="80" autocomplete="name"></div>
   <div><label for="fvRole">I am a…</label><select id="fvRole"><option value="teacher">Teacher</option><option value="admin">School leader</option><option value="parent">Parent</option><option value="other">Other</option></select></div></div>
@@ -194,5 +194,27 @@ $('fv').addEventListener('submit',async e=>{e.preventDefault();const em=$('fvEma
  $('fvGo').disabled=false;});})();
 (function(){try{const box=document.getElementById('sets'),L=JSON.parse(document.getElementById('setSpr').textContent);L.forEach(S=>{const f=document.createElement('figure'),c=document.createElement('canvas');c.width=14;c.height=14;const x=c.getContext('2d'),P=S.p,g=S.m.map(r=>r.padEnd(12,'.').slice(0,12)),on=(i,j)=>i>=0&&j>=0&&i<12&&j<12&&P[g[j][i]];x.fillStyle='#0b0910';for(let j=-1;j<=12;j++)for(let i=-1;i<=12;i++){if(on(i,j))continue;if(on(i-1,j)||on(i+1,j)||on(i,j-1)||on(i,j+1))x.fillRect(i+1,j+1,1,1);}for(let j=0;j<12;j++)for(let i=0;i<12;i++){const col=P[g[j][i]];if(col){x.fillStyle=col;x.fillRect(i+1,j+1,1,1);}}c.setAttribute('role','img');c.setAttribute('aria-label',S.n+' set');const cap=document.createElement('figcaption');cap.textContent=S.n;cap.style.color=S.a==='#ffffff'?'#bfe6ff':S.a;f.appendChild(c);f.appendChild(cap);box.appendChild(f);});}catch(e){}})();
 document.querySelectorAll('[data-plan]').forEach(b=>b.addEventListener('click',()=>{const s=document.getElementById('fvPlan');s.value=b.dataset.plan;document.getElementById('fv').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>document.getElementById('fvEmail').focus({preventScroll:true}),500);}));
+</script>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script>
+(function(){
+ var TOKEN='live_c76befe87215c25763fe7a2a3f6',ready=false,lastBtn=null;
+ var NAMES={'pri_01m7h20wqrt7wepqf2j1nn62xc':'Classroom Edition','pri_01m7h22rd9456h2v44w799d678':'Online Plan','pri_01m7h24jb2w35vg6bc41f51t4d':'School License'};
+ function out(html,ok){var o=document.getElementById('payOut');if(!o)return;o.innerHTML=html;o.style.color=ok?'var(--green)':'';o.scrollIntoView({behavior:'smooth',block:'center'});}
+ function fallback(b){var plan=b&&b.dataset.fb;var s=document.getElementById('fvPlan');if(s&&plan)s.value=plan;
+  out('Online checkout is opening soon. For now, send the form below and you\'ll get an email with how to pay and your code.');
+  var f=document.getElementById('fv');if(f)setTimeout(function(){f.scrollIntoView({behavior:'smooth',block:'start'});},600);}
+ function notify(d){try{var it=(d.items&&d.items[0])||{};var pid=it.price_id||(it.price&&it.price.id)||'';
+  fetch('https://formsubmit.co/ajax/schoolhiddentreasuregame@gmail.com',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
+   body:JSON.stringify({_subject:'NEW SALE: '+(NAMES[pid]||it.price_name||'Hidden Treasure Quest')+' - send a school code',_template:'table',_captcha:'false',
+    Plan:NAMES[pid]||it.price_name||pid,Buyer_email:(d.customer&&d.customer.email)||'',Transaction:d.transaction_id||'',Total:(d.totals&&d.totals.total)||'',Currency:d.currency_code||'',
+    Next_step:'Make a code on the admin page and email it to the buyer.'})}).catch(function(){});}catch(e){}}
+ try{if(window.Paddle){Paddle.Initialize({token:TOKEN,eventCallback:function(e){if(!e)return;
+  if(e.name==='checkout.completed'){notify(e.data||{});out('🎉 Thank you! Your payment went through. Your school code will arrive by email within 1 school day. Questions? <a href="mailto:schoolhiddentreasuregame@gmail.com">schoolhiddentreasuregame@gmail.com</a>',true);}
+  else if(e.name==='checkout.error'){try{Paddle.Checkout.close();}catch(x){}fallback(lastBtn);}}});ready=true;}}catch(e){ready=false;}
+ document.querySelectorAll('[data-price]').forEach(function(b){b.addEventListener('click',function(){lastBtn=b;
+  if(!ready||!window.Paddle){fallback(b);return;}
+  try{Paddle.Checkout.open({items:[{priceId:b.dataset.price,quantity:1}],settings:{displayMode:'overlay',theme:'light',locale:'en'}});}catch(e){fallback(b);}});});
+})();
 </script>
 </body></html>
