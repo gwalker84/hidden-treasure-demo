@@ -221,7 +221,7 @@ window.HTQ_PASSWORD = "teacher";           // password for the Teacher Hub (chan
 <!-- TITLE -->
 <div class="screen" id="screen-title"><div class="titlebox">
  <div class="title2 px">⚔️ A Learning Dungeon Quest · Grades 5–8 ⚔️</div>
- <div class="title1 px">§T§'s<br>Hidden Treasure</div>
+ <div class="title1 px">Hidden Treasure<br>Quest</div>
  <canvas id="titleArt" width="440" height="130"></canvas>
  <div class="tbtns"><button class="btn gold" id="bNew">⚔️ New Hero</button><button class="btn" id="bHow">❓ How to Play</button><button class="btn gold" id="bParty">👥 Party Play (2–3)</button><button class="btn" id="bHof">🏛️ Hall of Fame</button><button class="btn" id="bTeach">🍎 Teacher Hub</button></div>
  <div id="saves"></div>
@@ -6326,7 +6326,7 @@ const LANG_KEY='htqDemo_lang';
 let LANG=(()=>{try{return localStorage.getItem(LANG_KEY)||'en';}catch(e){return'en';}})();
 const ES={
 // title + hero creation
-"⚔️ A Science & History Dungeon Quest ⚔️":"⚔️ Una aventura de ciencia e historia en mazmorras ⚔️","§T§'s":"El tesoro escondido","Hidden Treasure":"de §T§",
+"⚔️ A Science & History Dungeon Quest ⚔️":"⚔️ Una aventura de ciencia e historia en mazmorras ⚔️","Hidden Treasure":"La búsqueda del","Quest":"tesoro escondido",
 "⚔️ New Hero":"⚔️ Nuevo héroe","❓ How to Play":"❓ Cómo jugar","👥 Party Play (2–3)":"👥 Juego en grupo (2–3)","🏛️ Hall of Fame":"🏛️ Salón de la fama","🍎 Teacher Hub":"🍎 Panel del maestro","🔑 Load Save Code":"🔑 Cargar código de guardado","👓 Reading & Display":"👓 Lectura y pantalla",
 "Type your hero name...":"Escribe el nombre de tu héroe...","Read aloud (R)":"Leer en voz alta (R)","Remove two wrong answers":"Quitar dos respuestas incorrectas","Pay the monster to tell you the answer":"Págale al monstruo para que te diga la respuesta","Pause and leave — you'll get this same question next time":"Pausar y salir — la próxima vez tendrás esta misma pregunta","Close":"Cerrar",
 "Create Your Hero":"Crea tu héroe","Hero name":"Nombre del héroe","Customize your hero":"Personaliza tu héroe","Body":"Cuerpo","♂ Male":"♂ Hombre","♀ Female":"♀ Mujer","Race":"Raza","Human":"Humano","Elf":"Elfo","Orc":"Orco","Skin":"Piel","Hair":"Cabello","Short":"Corto","Long":"Largo","Ponytail":"Cola de caballo","Braids":"Trenzas","Bun":"Moño","Curly":"Rizado","Spiky":"De punta","Mohawk":"Cresta","Bald":"Calvo","Hair color":"Color de cabello","Extras":"Extras","Beard":"Barba","Helmet":"Casco","Choose your class":"Elige tu clase","◀ Back":"◀ Atrás","Begin the Quest ▶":"Comenzar la aventura ▶","NEW":"NUEVO","SECRET":"SECRETO","??? Secret Class":"??? Clase secreta",
@@ -7209,6 +7209,114 @@ setInterval(wkBadges,700);
 {const _cmGv=closeModal;closeModal=function(){GV_NEW=new Set();return _cmGv.apply(this,arguments);};}
 // Spanish labels for the new buttons
 try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","✨ Sets":"✨ Conjuntos","✨ Armor Sets":"✨ Conjuntos de armadura","⚡ Auto-Equip Best":"⚡ Equipar lo mejor","Gear":"Equipo","Bag":"Bolsa","Talents":"Talentos","Potion":"Poción","Help":"Ayuda","Music":"Música","Retreat":"Retirarse","✨ Set bonuses":"✨ Bonos de conjunto","Tap a slot to see your item and swap it for something in your bag.":"Toca una ranura para ver tu objeto y cambiarlo por algo de tu bolsa.","Show my armor set look on my hero":"Mostrar el aspecto del conjunto en mi héroe","Take off":"Quitar"});}catch(e){}
+
+// ===================== V43: LONG MUSIC — a different track (75+ seconds before it repeats) for every area and dungeon =====================
+(function(){
+ const SC={maj:[0,2,4,5,7,9,11],mix:[0,2,4,5,7,9,10],lyd:[0,2,4,6,7,9,11],nat:[0,2,3,5,7,8,10],dor:[0,2,3,5,7,9,10],harm:[0,2,3,5,7,8,11],phr:[0,1,3,5,7,8,10]};
+ const PROGS={
+  bright:[[0,4,5,3],[0,3,4,4],[5,3,0,4],[0,5,3,4],[3,4,0,0],[0,2,3,4],[3,0,4,5],[0,4,3,4]],
+  dark:[[0,5,6,4],[0,3,4,4],[0,6,5,6],[0,5,3,4],[5,6,0,0],[0,3,6,4],[3,4,0,6],[0,1,0,4]],
+  calm:[[0,3,0,4],[0,5,3,4],[3,0,4,0],[0,2,3,0],[5,3,4,0],[0,4,5,3]]};
+ const DR={
+  none:['................'],
+  soft:['k.......h.......','k.......h...h...','k...h...k...h...','k.......h.....h.'],
+  walk:['k.h...h.k.h...h.','k.h...h.k.h.s.h.','k.h.s.h.k.h.s.h.','k.h.s.h.k.k.s.h.'],
+  pop:['k.h.s.h.k.h.s.h.','k.h.s.h.k.k.s.h.','x.h.s.h.k.h.s.ho','k.hhs.h.k.hhs.h.'],
+  march:['k.s.k.s.k.s.kss.','k...s...k...s...','k.s.k.s.k.s.k.s.','k...s.k.k...s.ss'],
+  drive:['k.h.s.h.k.k.s.h.','k.hhs.h.k.hhs.hh','x.h.s.h.k.k.s.hh','k.h.s.hsk.h.s.h.'],
+  heavy:['k.k.s.k.k.k.s.kk','k..ks..kk..ks.k.','x.k.s.k.k.k.s.kk','k.k.s.k.kk.ks.ss'],
+  fill:['k.h.s.h.s.s.ssss','k.k.s.s.k.s.ssss','k...s.s.s.s.ssss']};
+ const RHY={
+  calm:['N _ _ N N _ _ .','N _ N _ N _ _ .','N _ _ _ N _ N _','N N N _ N _ _ .','. . N _ N _ N _'],
+  mid:['N _ N N N _ N .','N N N _ N _ N _','N _ N _ N N N _','N . N N N _ _ .','N N . N N _ N N'],
+  fast:['N N N _ N N N N','N _ N N N _ N N','N N N N N _ N _','N . N N . N N N','N N N _ N N N _']};
+ const hashS=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
+ // style presets: mood decides progressions, rhythm, drums, bass
+ const STY={
+  cozy:{pg:'calm',rh:'calm',dr:['soft','walk','soft','none'],bs:['slow','slow','octave','slow'],ar:['pad','pad','fast','pad']},
+  bright:{pg:'bright',rh:'mid',dr:['walk','pop','pop','soft'],bs:['octave','drive','octave','slow'],ar:['pad','fast','pad','pad']},
+  explore:{pg:'dark',rh:'calm',dr:['soft','walk','walk','none'],bs:['slow','octave','slow','slow'],ar:['pad','pad','fast','pad']},
+  eerie:{pg:'dark',rh:'calm',dr:['none','soft','soft','none'],bs:['slow','slow','slow','slow'],ar:['pad','pad','fast','pad']},
+  heavy:{pg:'dark',rh:'mid',dr:['walk','heavy','walk','soft'],bs:['gallop','chug','slow','slow'],ar:['pad','fast','pad','pad']},
+  march:{pg:'dark',rh:'mid',dr:['march','march','pop','soft'],bs:['octave','drive','octave','slow'],ar:['pad','fast','pad','pad']},
+  epic:{pg:'dark',rh:'mid',dr:['pop','drive','drive','soft'],bs:['drive','gallop','octave','slow'],ar:['fast','fast','pad','pad']},
+  battle:{pg:'dark',rh:'fast',dr:['drive','drive','heavy','walk'],bs:['drive','gallop','octave','slow'],ar:['fast','fast','fast','pad']},
+  boss:{pg:'dark',rh:'fast',dr:['heavy','heavy','drive','walk'],bs:['chug','chug','gallop','slow'],ar:['fast','fast','fast','pad']}};
+ function compose(name,o){
+  const R=mulberry(hashS(name)),pk=a=>a[Math.floor(R()*a.length)],st=STY[o.style],sc=SC[o.sc];
+  const barSec=240/o.bpm,nSec=Math.max(4,Math.ceil((o.len||80)/barSec/8)); // 8-bar sections, always 75s+ before the loop
+  const forms=['A','B','A','C','B','A','D','A','B','C','A','B'],used={};
+  const phrase=(prog,rh)=>{ // 4 bars of lead, built on the chords
+   const motif=pk(RHY[rh]).split(' ');const L=[];let last=prog[0]+2,dir=R()<.5?1:-1;
+   prog.forEach((ch,bi)=>{const tk=motif.slice();if(bi===3){for(let i=4;i<8;i++)tk[i]=i===4?'N':(i===7?'.':'_');}
+    if(bi===1&&R()<.5){tk[6]='.';tk[7]='.';}
+    let p=last;const out=tk.map((x,i)=>{if(x!=='N')return x;
+     const prev=p;if(i%4===0){const opts=[ch,ch+2,ch+4,ch+7].map(v=>v>9?v-7:v).filter(v=>v!==prev);p=opts.reduce((b,v)=>Math.abs(v-p)<Math.abs(b-p)?v:b,opts[0]);if(R()<.3)p=pk(opts);}
+     else{dir=R()<.75?dir:-dir;p+=dir*pk([1,1,1,2]);}
+     if(p>9)dir=-1;if(p<0)dir=1;
+     p=Math.max(-2,Math.min(11,p));return String(p);});
+    if(bi===3){const fin=[ch,ch+2,ch+4].map(v=>v>9?v-7:v);out[4]=String(pk(fin));}
+    last=p;L.push(out.join(' '));});return L;};
+  const mkSec=(kind)=>{if(used[kind])return used[kind];
+   const pool=PROGS[st.pg],pa=pk(pool),pb=pk(pool),k={A:0,B:1,C:3,D:2}[kind];
+   const prog=kind==='C'?[...pa,...pa]:[...pa,...pb];
+   const rh=kind==='C'?'calm':(kind==='D'&&st.rh!=='fast'?(st.rh==='calm'?'mid':'fast'):st.rh);
+   let L=[...phrase(prog.slice(0,4),rh),...phrase(prog.slice(4),rh)];
+   if(kind==='C')L=L.map((l,i)=>i%2?'. . . . . . . .':l); // breakdown: half the lead drops out
+   const dset=DR[st.dr[k]];const D=prog.map((_,i)=>i===7?pk(DR.fill):dset[i%dset.length]);
+   if(st.dr[k]==='none')D[7]='................';
+   return used[kind]={prog,L,D,bass:st.bs[k],arp:st.ar[k],lv:kind==='C'?.75:1,echo:kind==='B'||kind==='D'};};
+  const prog=[],L=[],D=[],BO=[];
+  for(let i=0;i<nSec;i++){const kind=forms[i%forms.length],s=mkSec(kind),again=forms.slice(0,i%forms.length).includes(kind)||i>=forms.length;
+   s.prog.forEach((c,j)=>{prog.push(c);let l=s.L[j];
+    if(again&&kind==='A'&&R()<.5)l=l.split(' ').map(x=>/^-?\d+$/.test(x)&&+x<5&&R()<.3?String(+x+7):x).join(' '); // vary repeats
+    L.push(l);D.push(s.D[j]);BO.push({bass:s.bass,arp:s.arp,lv:s.lv,echo:s.echo});});}
+  const S={v2:1,long:1,bpm:o.bpm,root:o.root,sc,prog,L,D,bass:'slow',arp:'pad',lw:o.lw,lv:o.lv||.022,dv:o.dv||.8,T:L.map(l=>l.trim().split(/\s+/))};
+  S.BO=BO.map(b=>Object.assign({},S,{bass:b.bass,arp:b.arp,lv:S.lv*b.lv,echo:b.echo}));S.secs=prog.length*barSec;return S;}
+ // ---- the track list ----
+ const LIB={
+  title:{style:'bright',sc:'maj',bpm:104,root:57,lw:'square'},
+  camp:{style:'cozy',sc:'maj',bpm:78,root:55,lw:'triangle',lv:.03},
+  classroom:{style:'bright',sc:'maj',bpm:116,root:52,lw:'square'},
+  victory:{style:'bright',sc:'lyd',bpm:126,root:60,lw:'square'},
+  tower:{style:'epic',sc:'harm',bpm:120,root:48,lw:'square'},
+  frost:{style:'eerie',sc:'harm',bpm:80,root:50,lw:'sine',lv:.04,dv:.4},
+  raid_air:{style:'bright',sc:'lyd',bpm:108,root:57,lw:'sine',lv:.04,dv:.6},
+  raid_fire:{style:'heavy',sc:'phr',bpm:128,root:52,lw:'sawtooth',lv:.016},
+  raid_water:{style:'explore',sc:'dor',bpm:84,root:50,lw:'sine',lv:.04,dv:.5},
+  raid_earth:{style:'heavy',sc:'nat',bpm:92,root:45,lw:'triangle',lv:.032},
+  raid_frost:{style:'eerie',sc:'harm',bpm:80,root:50,lw:'sine',lv:.04,dv:.4}};
+ // five world regions
+ [['maj',112,55,'square'],['mix',104,57,'square'],['dor',96,52,'triangle'],['lyd',108,53,'square'],['nat',100,50,'triangle']].forEach(([sc,bpm,root,lw],i)=>LIB['world'+i]={style:i%2?'bright':'cozy',sc,bpm,root,lw,lv:lw==='triangle'?.03:.02});
+ // each dungeon gets its own track, themed by its area
+ const TH=[{style:'explore',sc:'dor',bpm:100,root:50,lw:'square'},{style:'eerie',sc:'harm',bpm:78,root:45,lw:'triangle',lv:.032,dv:.5},
+  {style:'heavy',sc:'nat',bpm:90,root:47,lw:'triangle',lv:.03},{style:'march',sc:'dor',bpm:108,root:48,lw:'square'},{style:'epic',sc:'harm',bpm:118,root:52,lw:'sawtooth',lv:.016}];
+ for(let d=1;d<=20;d++){const t=TH[Math.floor((d-1)/4)],j=(d-1)%4;LIB['dg'+d]=Object.assign({},t,{bpm:t.bpm+[0,6,-4,10][j],root:t.root+[0,3,-2,5][j]});}
+ // boss fights: one per area, plus each raid boss
+ [['harm',160,45],['phr',150,43],['nat',156,40],['harm',166,47],['harm',176,45]].forEach(([sc,bpm,root],i)=>LIB['boss'+i]={style:'boss',sc,bpm,root,lw:'sawtooth',lv:.016,dv:1.1});
+ ['air','fire','water','earth','frost'].forEach((id,i)=>LIB['rboss_'+id]={style:'boss',sc:['lyd','phr','dor','nat','harm'][i],bpm:[162,172,150,154,168][i],root:[50,45,47,40,48][i],lw:'sawtooth',lv:.016,dv:1.1});
+ // regular battles: three per area
+ for(let a=0;a<5;a++)for(let n=1;n<=3;n++)LIB['bt'+a+'_'+n]={style:'battle',sc:['nat','harm','dor'][(a+n)%3],bpm:[140,150,160][n-1]+a*2,root:[52,50,55][n-1]-a,lw:'square',lv:.022,dv:1};
+ const getSong=n=>{if(!LIB[n])return null;const k='__long_'+n;if(!SONGS[k])SONGS[k]=compose(n,LIB[n]);return k;};
+ window.HTQ_MUSIC={LIB,compose,getSong};
+ // ---- pick the right track for wherever the hero is ----
+ const tierOf=()=>D&&D.d?Math.max(0,Math.min(4,Math.floor((D.d-1)/4))):0;
+ const raidId=()=>{try{return D&&D.raid?RAIDS[D.raid-1].id:null;}catch(e){return null;}};
+ const regionNow=()=>{try{return WM&&WM.regOf?WM.regOf(P.x):0;}catch(e){return 0;}};
+ function mapName(n){
+  if(n==='dungeon'||n==='dungeon2'){if(D&&D.tower)return'tower';if(D&&D.d)return'dg'+D.d;}
+  if(n==='frost')return Cb&&combatOpen&&Cb.e&&Cb.e.boss?'rboss_frost':'raid_frost';
+  if(n==='boss'){const r=raidId();const inBoss=combatOpen&&Cb&&Cb.e&&Cb.e.boss;if(r)return(inBoss?'rboss_':'raid_')+r;return'boss'+tierOf();}
+  if(/^battle[123]$/.test(n))return'bt'+tierOf()+'_'+n.slice(6);
+  if(n==='world')return'world'+regionNow();
+  return n;}
+ const _setMusic=setMusic;setMusic=function(name){const m=mapName(name),k=getSong(m);return _setMusic(k||name);};
+ const _ss=stepSong;stepSong=function(S,step,t,spb,root){if(!S.BO)return _ss(S,step,t,spb,root);
+  const nb=S.prog.length,bar=Math.floor(step/16)%nb,B=S.BO[bar];_ss(B,step,t,spb,root);
+  if(B.echo&&step%2===0){const tk=S.T[bar][(step%16)/2];if(tk&&tk!=='.'&&tk!=='_')tone(noteF(root,S.sc,+tk),t+spb*3,spb*1.6,'triangle',S.lv*.9);}};
+ // switch world music when walking into a new region
+ setInterval(()=>{try{if(D&&D.world&&!combatOpen&&MU.song&&/^__long_world\d$/.test(MU.song)){const k=getSong('world'+regionNow());if(k&&k!==MU.song)_setMusic(k);}}catch(e){}},1000);
+})();
 
 renderTitle();show('title');requestAnimationFrame(render);
 
