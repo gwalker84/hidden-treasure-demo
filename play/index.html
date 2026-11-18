@@ -7473,6 +7473,12 @@ try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","�
  if(typeof ES==='object')Object.assign(ES,{'⚔️ Arena':'⚔️ Arena','⚔️ Daily Arena':'⚔️ Arena diaria','⚔️ Find a match':'⚔️ Buscar rival','🏆 Today\'s rankings':'🏆 Clasificación de hoy','🏆 Victory!':'🏆 ¡Victoria!','Good fight!':'¡Buena pelea!','⚔️ Battle again':'⚔️ Pelear otra vez','🏆 Rankings':'🏆 Clasificación','Done':'Listo','Back':'Volver','Cancel':'Cancelar'});
 })();
 
+// ===================== V46: no more typed ("Type It" fill-in-the-blank) questions — they show as multiple choice =====================
+(function(){
+ const _kc=kxCfg;kxCfg=function(){const c=_kc.apply(this,arguments);c.type=false;return c;};
+ const _ko=kxOptsHTML;kxOptsHTML=function(){return _ko.apply(this,arguments).replace(/<label class="radio"><input type="checkbox" data-kxo="type"[^>]*> ✍️ Type It \(typed answer\)<\/label>/,'');};
+})();
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
