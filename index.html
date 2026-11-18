@@ -98,6 +98,7 @@ nav .links a.pr{display:inline}@media (max-width:820px){.sets{grid-template-colu
   <div class="f"><div class="i">🔊</div><h3>Read-aloud & supports</h3><p>Questions can be read aloud. Bigger text, high contrast, extra time, and fewer answer choices are built in.</p></div>
   <div class="f"><div class="i">🛡️</div><h3>Gear & armor sets</h3><p>A paper-doll Gear screen with 7 slots, one-tap Auto-Equip, and 12 armor sets that change how your hero looks and add set bonuses.</p></div>
   <div class="f"><div class="i">🐾</div><h3>Lots to collect</h3><p>Pets, gear, crafting, fishing, cosmetics, daily quests, and achievements keep students motivated.</p></div>
+  <div class="f"><div class="i">⚔️</div><h3>Daily PvP Arena</h3><p>Students battle classmates in their level bracket on the same questions. Daily rankings stay private to your school.</p></div>
   <div class="f"><div class="i">👥</div><h3>Party play</h3><p>2–3 students can play together on one device and take turns answering.</p></div>
   <div class="f"><div class="i">🔒</div><h3>Private by design</h3><p>No student accounts or emails. Progress saves on each device; Save Codes move it between computers.</p></div>
  </div>
@@ -125,6 +126,7 @@ nav .links a.pr{display:inline}@media (max-width:820px){.sets{grid-template-colu
   <tr><td>Gear</td><td class="c">Common & Uncommon</td><td class="c"><b>Up to Legendary</b></td></tr>
   <tr><td>All subjects & grades</td><td class="c yes">✔</td><td class="c yes">✔</td></tr>
   <tr><td>Armor sets with new looks & bonuses</td><td class="c">4 sets</td><td class="c"><b>All 12</b></td></tr>
+  <tr><td>Daily PvP Arena & school rankings</td><td class="c">Practice only</td><td class="c yes">✔</td></tr>
   <tr><td>Endless Tower, Raids, New Game+</td><td class="c no">—</td><td class="c yes">✔</td></tr>
   <tr><td>Teacher Hub & progress reports</td><td class="c yes">✔</td><td class="c yes">✔</td></tr>
   <tr><td>Treasure map, final dragon & ending</td><td class="c no">—</td><td class="c yes">✔</td></tr>
@@ -208,9 +210,9 @@ document.querySelectorAll('[data-plan]').forEach(b=>b.addEventListener('click',(
   fetch('https://formsubmit.co/ajax/schoolhiddentreasuregame@gmail.com',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
    body:JSON.stringify({_subject:'NEW SALE: '+(NAMES[pid]||it.price_name||'Hidden Treasure Quest')+' - send a school code',_template:'table',_captcha:'false',
     Plan:NAMES[pid]||it.price_name||pid,Buyer_email:(d.customer&&d.customer.email)||'',Transaction:d.transaction_id||'',Total:(d.totals&&d.totals.total)||'',Currency:d.currency_code||'',
-    Next_step:'Make a code on the admin page and email it to the buyer.'})}).catch(function(){});}catch(e){}}
+    Next_step:'Make a code on the admin page and email it to the buyer with the game link: https://gwalker84.github.io/hidden-treasure/'})}).catch(function(){});}catch(e){}}
  try{if(window.Paddle){Paddle.Initialize({token:TOKEN,eventCallback:function(e){if(!e)return;
-  if(e.name==='checkout.completed'){notify(e.data||{});out('🎉 Thank you! Your payment went through. Your school code will arrive by email within 1 school day. Questions? <a href="mailto:schoolhiddentreasuregame@gmail.com">schoolhiddentreasuregame@gmail.com</a>',true);}
+  if(e.name==='checkout.completed'){notify(e.data||{});out('🎉 Thank you! Your payment went through. <b>Your game is here: <a href="https://gwalker84.github.io/hidden-treasure/" target="_blank">gwalker84.github.io/hidden-treasure</a></b> — save this link. Your school code will arrive by email within 1 school day; type it in once on each device. Questions? <a href="mailto:schoolhiddentreasuregame@gmail.com">schoolhiddentreasuregame@gmail.com</a>',true);}
   else if(e.name==='checkout.error'){try{Paddle.Checkout.close();}catch(x){}fallback(lastBtn);}}});ready=true;}}catch(e){ready=false;}
  document.querySelectorAll('[data-price]').forEach(function(b){b.addEventListener('click',function(){lastBtn=b;
   if(!ready||!window.Paddle){fallback(b);return;}
