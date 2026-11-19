@@ -8792,6 +8792,184 @@ async function csumLoad(){if(!CDB||CSUMbusy)return false;CSUMbusy=true;let ok=fa
  const fixC=codes=>Array.isArray(codes)?codes.map(c=>REN[c]||c):codes;
  const _amR=asgMatches;asgMatches=function(a,q){return _amR(a&&a.k?Object.assign({},a,{k:fixC(a.k)}):a,q);};
  const _pcR=poolForCodes;poolForCodes=function(codes,subj){return _pcR(fixC(codes),subj);};}
+// ===================== V60: BIGGER HOUSES, DECORATING STYLES, ARRANGE MODE, RARE BOSS DECOR =====================
+const HOUSES=[
+ {id:'cabin',n:'Cozy Cabin',i:'🏡',p:1500,W:640,H:300,win:1,wall:'logs',floor:'planks',d:'A snug one-room log cabin.'},
+ {id:'cottage',n:'Stone Cottage',i:'🏠',p:5000,W:760,H:320,win:2,wall:'stone',floor:'planks',d:'A bigger stone cottage with two windows and room for more furniture.'},
+ {id:'manor',n:'Grand Manor',i:'🏛️',p:12000,W:880,H:340,win:3,wall:'panel',floor:'marble',d:'A fancy manor with a chandelier, tall ceilings, and three windows.'},
+ {id:'castle',n:'Castle Keep',i:'🏰',p:25000,W:1000,H:360,win:3,wall:'castle',floor:'castlestone',d:'Your own castle hall with arched windows, torches, and banners.'},
+ {id:'sky',n:'Cloud Citadel',i:'☁️',p:15000,W:1040,H:380,win:3,wall:'clouds',floor:'goldfl',view:'skyhigh',raid:true,d:'A palace floating above the clouds. Needs the Cloud Citadel Deed from the Air or Water raid.'},
+ {id:'lair',n:'Dragon’s Lair',i:'🌋',p:15000,W:1040,H:380,win:2,wall:'lava',floor:'obsidian',view:'sunset',raid:true,d:'A volcanic hall glowing with lava. Needs the Dragon’s Lair Deed from the Fire or Earth raid.'}];
+const HBY=Object.fromEntries(HOUSES.map((h,i)=>[h.id,Object.assign({tier:h.raid?3:i},h)]));
+function cabBuilt(h){h=h||hero;const c=h.cabin;if(!c)return[];if(!c.built){const t=(HBY[c.house||'cabin']||HBY.cabin).tier;c.built=HOUSES.filter((x,i)=>!x.raid&&i<=t).map(x=>x.id);if(HBY[c.house]&&HBY[c.house].raid)c.built.push(c.house);}return c.built;}
+const NORMAL_H=HOUSES.filter(x=>!x.raid);
+// raid-only drops: house deeds and building materials
+const RAID_DEED={air:['sky'],water:['sky'],fire:['lair'],earth:['lair'],champion:['sky','lair'],elemental:['sky','lair']};
+const HOUSE_RMAT={air:['wall:clouds','view:skyhigh'],water:['wall:coral','view:underwater'],fire:['wall:lava','floor:obsidian'],earth:['wall:geode','floor:crystalfl'],champion:['wall:runes','floor:goldfl'],elemental:['wall:runes','floor:goldfl','view:aurora2']};
+const DEED_CHANCE=.2,MAT_CHANCE=.35;
+const houseOf=h=>{h=h||hero;return HBY[(h&&h.cabin&&h.cabin.house)||'cabin'];};
+const CAB_STYLES={
+ wall:[['logs','Log Walls',0],['stone','Stone Blocks',300],['brick','Red Brick',300],['blue','Painted Blue',200],['stripes','Striped Wallpaper',350],['pink','Pastel Pink',200],['panel','Dark Wood Panels',400],['castle','Castle Stone',600],['night','Starry Night Mural',800]],
+ floor:[['planks','Wood Planks',0],['checker','Checker Tile',250],['stonefl','Stone Floor',250],['redcarpet','Red Carpet',300],['bluecarpet','Blue Carpet',300],['marble','Marble',600],['castlestone','Castle Flagstones',500],['grass','Indoor Grass',400]],
+ view:[['day','Sunny Day',0],['sunset','Sunset',250],['night','Starry Night',250],['snow','Snowfall',300],['aurora','Northern Lights',600]],
+ light:[['bright','Bright',0],['cozy','Cozy Evening',0],['dark','Nighttime',0]]};
+// raid-only materials (price -1 = can't be bought)
+[['wall','clouds','Cloud Walls'],['wall','coral','Coral Reef'],['wall','lava','Lava Rock'],['wall','geode','Geode Crystal'],['wall','runes','Elemental Runes'],['floor','obsidian','Obsidian Floor'],['floor','crystalfl','Crystal Cave Floor'],['floor','goldfl','Golden Tiles'],['view','skyhigh','Above the Clouds'],['view','underwater','Underwater'],['view','aurora2','Elemental Storm']].forEach(([k,id,n])=>CAB_STYLES[k].push([id,n,-1]));
+const matFrom=key=>{const r=Object.keys(HOUSE_RMAT).filter(k=>HOUSE_RMAT[k].includes(key)).map(k=>(RAIDS.find(R=>R.id===k)||{}).n).filter(Boolean);return r.join(' or ');};
+const STYLE_LBL={wall:'🧱 Walls',floor:'🟫 Floor',view:'🪟 Window view',light:'💡 Lighting'};
+// new shop furniture: fx,fy = default spot as a fraction of the room; h = smallest house tier that fits it
+const FURN2=[
+ {id:'sofa',n:'Comfy Sofa',i:'🛋️',p:600,fx:.62,fy:.82,s:56,perk:'Sit back and relax (cosmetic)'},
+ {id:'clock',n:'Grandfather Clock',i:'🕰️',p:350,fx:.07,fy:.5,s:44,perk:'Tick-tock (cosmetic)'},
+ {id:'painting',n:'Landscape Painting',i:'🖼️',p:450,fx:.72,fy:.24,s:40,perk:'Art for your walls (cosmetic)'},
+ {id:'guitar',n:'Guitar',i:'🎸',p:500,fx:.16,fy:.78,s:40,perk:'Strum a tune (cosmetic)'},
+ {id:'armchair',n:'Armchair',i:'🪑',p:300,fx:.82,fy:.8,s:40,perk:'A cozy seat (cosmetic)'},
+ {id:'teddy',n:'Teddy Bear',i:'🧸',p:150,fx:.3,fy:.86,s:32,perk:'A cuddly friend (cosmetic)'},
+ {id:'cactus',n:'Cactus',i:'🌵',p:120,fx:.95,fy:.6,s:36,perk:'Hardly needs water (cosmetic)'},
+ {id:'sunflower',n:'Sunflower Pot',i:'🌻',p:150,fx:.02,fy:.88,s:36,perk:'Turns toward the sun (cosmetic)'},
+ {id:'tv',n:'Television',i:'📺',p:800,fx:.5,fy:.58,s:44,perk:'Science shows all day (cosmetic)',h:1},
+ {id:'piano',n:'Piano',i:'🎹',p:1500,fx:.24,fy:.6,s:52,perk:'Practice your scales (cosmetic)',h:1},
+ {id:'desk',n:'Computer Desk',i:'🖥️',p:1200,fx:.88,fy:.62,s:44,perk:'Research station (cosmetic)',h:1},
+ {id:'alchemy',n:'Alchemy Set',i:'⚗️',p:1000,fx:.4,fy:.6,s:40,perk:'Bubbling experiments (cosmetic)',h:1},
+ {id:'candles',n:'Candelabra',i:'🕯️',p:900,fx:.33,fy:.5,s:36,perk:'Flickering candlelight (cosmetic)',h:2},
+ {id:'fountain',n:'Indoor Fountain',i:'⛲',p:2500,fx:.5,fy:.88,s:60,perk:'Splish splash (cosmetic)',h:2},
+ {id:'statue',n:'Stone Statue',i:'🗿',p:3000,fx:.04,fy:.62,s:56,perk:'A mysterious guardian (cosmetic)',h:3},
+ {id:'dragonst',n:'Dragon Statue',i:'🐉',p:5000,fx:.92,fy:.86,s:60,perk:'Fierce and golden (cosmetic)',h:3}];
+// rare decor that ONLY drops from bosses — r is the rarity (1 Uncommon … 4 Legendary)
+const BOSS_DECOR=[
+ {id:'mushlamp',n:'Glowing Mushroom Lamp',i:'🍄',r:1,fx:.2,fy:.88,s:36,perk:'Dropped by a boss. Glows softly.'},
+ {id:'bonechime',n:'Bone Wind Chime',i:'🦴',r:1,fx:.58,fy:.3,s:30,perk:'Dropped by a boss. Clatters in the breeze.'},
+ {id:'webtap',n:'Spider Web Tapestry',i:'🕸️',r:1,fx:.9,fy:.22,s:44,perk:'Dropped by a boss. Creepy but cool.'},
+ {id:'slimejar',n:'Slime in a Jar',i:'🫙',r:1,fx:.46,fy:.84,s:32,perk:'Dropped by a boss. It wiggles!'},
+ {id:'dragonegg',n:'Dragon Egg',i:'🥚',r:2,fx:.7,fy:.6,s:34,perk:'Dropped by a boss. Still warm…'},
+ {id:'crystal',n:'Crystal Ball',i:'🔮',r:2,fx:.28,fy:.6,s:36,perk:'Dropped by a boss. Shows the future.'},
+ {id:'armor',n:'Knight Armor Stand',i:'🛡️',r:2,fx:.97,fy:.82,s:46,perk:'Dropped by a boss. Polished steel.'},
+ {id:'wizhat',n:'Wizard Hat Display',i:'🎩',r:2,fx:.14,fy:.5,s:34,perk:'Dropped by a boss. Smells like magic.'},
+ {id:'phoenix',n:'Phoenix Feather',i:'🪶',r:3,fx:.8,fy:.36,s:36,perk:'Epic boss drop. +3% XP from battles.'},
+ {id:'mirror',n:'Enchanted Mirror',i:'🪞',r:3,fx:.12,fy:.3,s:44,perk:'Epic boss drop. +3% gold from battles.'},
+ {id:'oldmap',n:'Ancient Treasure Map',i:'🗺️',r:3,fx:.36,fy:.26,s:40,perk:'Epic boss drop. Marks a hidden X (cosmetic).'},
+ {id:'hoard',n:'Dragon Hoard',i:'💎',r:4,fx:.75,fy:.9,s:48,perk:'LEGENDARY boss drop. +5% gold from battles.'},
+ {id:'throne',n:'Golden Throne',i:'👑',r:4,fx:.5,fy:.7,s:54,perk:'LEGENDARY boss drop. +5% XP from battles.'}];
+FURN2.forEach(f=>{FURN.push(f);FBY[f.id]=f;});
+BOSS_DECOR.forEach(f=>{f.boss=true;FBY[f.id]=f;});
+const ALLDECOR=()=>FURN.concat(BOSS_DECOR);
+// boss-drop chances: 1 in 8 boss wins drops decor (raid bosses 1 in 4). Rarity: Uncommon 55%, Rare 28%, Epic 13%, Legendary 4%
+const DECOR_CHANCE=.125,DECOR_RAID=.25,DECOR_W=[0,55,28,13,4];
+function cabFix(h){h=h||hero;if(!h||!h.cabin)return null;const c=h.cabin;c.items=c.items||[];c.house=c.house||'cabin';c.pos=c.pos||{};c.hid=c.hid||[];c.styles=c.styles||[];return c;}
+function decorDrop(h,raid,forceR){h=h||hero;if(!h)return null;if(!forceR&&Math.random()>(raid?DECOR_RAID:DECOR_CHANCE))return null;
+ let r=forceR;if(!r){let x=Math.random()*100;r=1;for(let i=1;i<DECOR_W.length;i++){if(x<DECOR_W[i]){r=i;break;}x-=DECOR_W[i];}}
+ h.decor=h.decor||[];let pool=BOSS_DECOR.filter(f=>f.r===r&&!h.decor.includes(f.id));if(!pool.length)pool=BOSS_DECOR.filter(f=>!h.decor.includes(f.id));if(!pool.length)return null;
+ const f=pool[Math.floor(Math.random()*pool.length)];h.decor.push(f.id);if(h.cabin){cabFix(h);if(!h.cabin.items.includes(f.id))h.cabin.items.push(f.id);}return f;}
+function raidHouseDrop(h,rid){const out=[];if(!h||!rid)return out;h.deeds=h.deeds||[];h.rmat=h.rmat||[];
+ const dl=(RAID_DEED[rid]||[]).filter(x=>!h.deeds.includes(x));if(dl.length&&Math.random()<DEED_CHANCE){const x=dl[Math.floor(Math.random()*dl.length)];h.deeds.push(x);out.push(`📜 <b style="color:${RAR[4].c}">${HBY[x].n} Deed</b> — a new house unlocked!`);}
+ const ml=(HOUSE_RMAT[rid]||[]).filter(x=>!h.rmat.includes(x));if(ml.length&&Math.random()<MAT_CHANCE){const x=ml[Math.floor(Math.random()*ml.length)];h.rmat.push(x);const[k,id]=x.split(':');const st=CAB_STYLES[k].find(y=>y[0]===id);out.push(`🧱 <b style="color:${RAR[3].c}">${st[1]}</b> house material`);}
+ return out;}
+{const _wD=win;win=function(){const e=Cb&&Cb.e,boss=!!(e&&e.boss),raid=!!(D&&D.raid),rid=raid&&RAIDS[D.raid-1]?RAIDS[D.raid-1].id:null;const team=PARTY?PARTY.slice():[hero];_wD.apply(this,arguments);if(!boss)return;
+ team.forEach(h=>{const f=decorDrop(h,raid);if(!f)return;const R=RAR[f.r];try{if(h===hero||!PARTY){snd('level');}toast(`<div class="px gold" style="font-size:10px">🏡 RARE HOUSE DECOR!</div>${PARTY?esc(h.name)+' found ':'You found '}<b style="color:${R.c}">${f.i} ${esc(f.n)}</b> <span class="mini">(${R.n})</span>${h.cabin?' — it’s in your house now!':' — buy a house to display it!'}`);}catch(x){}});try{(PARTY||[hero]).forEach(x=>{if(x===hero)saveHero();});}catch(x){}team.forEach(h=>{if(!rid)return;const got=raidHouseDrop(h,rid);if(got.length)try{snd('level');toast(`<div class="px gold" style="font-size:10px">🏰 RAID HOUSE DROP!</div>${PARTY?esc(h.name)+': ':''}${got.join('<br>')}`);}catch(x){}});if(PARTY&&typeof saveParty==='function')saveParty();else saveHero();};}
+{const _Tv=T;T=function(k){let v=_Tv(k);if(hero&&hero.cabin){if(k==='xp'){if(cabinHas('phoenix'))v+=3;if(cabinHas('throne'))v+=5;}if(k==='gold'){if(cabinHas('mirror'))v+=3;if(cabinHas('hoard'))v+=5;}}return v;};}
+const styOwned=(cb,k,id,p)=>!p||(cb.styles||[]).includes(k+':'+id)||(hero.rmat||[]).includes(k+':'+id)||houseOf()[k]===id;
+const STY_ON=(c,k)=>c[k]||(k==='wall'||k==='floor'?houseOf()[k]:k==='view'?(houseOf().view||'day'):'bright');
+const cabPos=(f,W,H)=>{const c=hero.cabin,p=c.pos[f.id];if(p)return[p[0]*W,p[1]*H];if(f.fx!=null)return[f.fx*W,f.fy*H];return[f.x/640*W,f.y/300*H];};
+function cabWall(c,k,W,F,t){const R=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h);};
+ if(k==='logs'){R(0,0,W,F,'#6b4a2b');for(let y=0;y<F;y+=20){R(0,y,W,20,y%40?'#7a5634':'#6b4a2b');R(0,y+19,W,1,'rgba(0,0,0,.25)');}}
+ else if(k==='stone'||k==='castle'){R(0,0,W,F,k==='castle'?'#5a5a66':'#8a8478');const bh=k==='castle'?30:22,bw=k==='castle'?60:44;for(let y=0,r=0;y<F;y+=bh,r++)for(let x=(r%2)*-bw/2;x<W;x+=bw){R(x+1,y+1,bw-2,bh-2,k==='castle'?((x+y)%3?'#62626e':'#6c6c78'):((x*7+y)%5?'#948d80':'#9c9586'));}}
+ else if(k==='brick'){R(0,0,W,F,'#d8cfc0');for(let y=0,r=0;y<F;y+=14,r++)for(let x=(r%2)*-16;x<W;x+=32)R(x+1,y+1,30,12,(x+y)%3?'#a8432f':'#b5503a');}
+ else if(k==='blue'){R(0,0,W,F,'#5b8fc9');R(0,F-30,W,30,'#e8eef6');R(0,F-32,W,3,'#3d6aa0');}
+ else if(k==='pink'){R(0,0,W,F,'#f4c6d6');R(0,F-30,W,30,'#fff3f7');R(0,F-32,W,3,'#d996ad');}
+ else if(k==='stripes'){R(0,0,W,F,'#f1e4c3');for(let x=0;x<W;x+=24)R(x,0,10,F,'#c9a96b');}
+ else if(k==='panel'){R(0,0,W,F,'#3e2414');for(let x=10;x<W;x+=70){R(x,F*.45,56,F*.5,'#4f2f1b');R(x+4,F*.45+4,48,F*.5-8,'#5a3720');}R(0,F*.4,W,4,'#c79a4a');}
+ else if(k==='clouds'){R(0,0,W,F,'#8ec5ff');c.fillStyle='rgba(255,255,255,.9)';for(let i=0;i<12;i++){const x=((i*157+t*8)%(W+120))-60,y=20+(i*37)%(F-60);c.beginPath();c.arc(x,y,22,0,7);c.arc(x+24,y-8,26,0,7);c.arc(x+50,y,20,0,7);c.fill();}}
+ else if(k==='coral'){R(0,0,W,F,'#0e5a7a');for(let i=0;i<40;i++){c.fillStyle=['#ff7a8a','#ffb36b','#c46bff','#5ee0c0'][i%4];c.beginPath();c.arc((i*71)%W,F-((i*29)%60),6+(i%3)*4,0,7);c.fill();}for(let i=0;i<10;i++){c.fillStyle='rgba(255,255,255,.35)';c.beginPath();c.arc((i*113+t*15)%W,F-((t*25+i*40)%F),3,0,7);c.fill();}}
+ else if(k==='lava'){R(0,0,W,F,'#2a1410');for(let y=0,r=0;y<F;y+=28,r++)for(let x=(r%2)*-28;x<W;x+=56)R(x+2,y+2,52,24,'#3a1d16');c.strokeStyle=`rgba(255,${90+40*Math.sin(t*2)},20,.8)`;c.lineWidth=3;for(let i=0;i<6;i++){c.beginPath();c.moveTo((i*173)%W,0);c.lineTo((i*173+40)%W,F*.5);c.lineTo((i*173+10)%W,F);c.stroke();}}
+ else if(k==='geode'){R(0,0,W,F,'#2c2240');for(let i=0;i<70;i++){c.fillStyle=['#a78bfa','#c4b5fd','#7dd3fc','#f0abfc'][i%4];const x=(i*61)%W,y=(i*43)%F;c.beginPath();c.moveTo(x,y-10);c.lineTo(x+6,y);c.lineTo(x,y+10);c.lineTo(x-6,y);c.fill();}}
+ else if(k==='runes'){R(0,0,W,F,'#1d1b2e');c.font='22px serif';c.textAlign='center';const sy=['🔥','💧','🌪️','🪨'];for(let i=0;i<24;i++){c.globalAlpha=.45+.35*Math.sin(t*2+i);c.fillText(sy[i%4],(i*89)%W+20,30+(i*47)%(F-40));}c.globalAlpha=1;}
+ else if(k==='night'){R(0,0,W,F,'#141a3a');for(let i=0;i<60;i++){const x=(i*97)%W,y=(i*53)%(F-10);c.globalAlpha=.4+.6*Math.abs(Math.sin(t*1.5+i));R(x,y,2,2,'#fff');}c.globalAlpha=1;c.fillStyle='#ffe9a8';c.beginPath();c.arc(W*.9,30,14,0,7);c.fill();}}
+function cabFloor(c,k,W,F,H){const R=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h);};const fh=H-F;
+ if(k==='planks'){R(0,F,W,fh,'#a8875a');for(let x=0;x<W;x+=40)R(x,F,1,fh,'rgba(0,0,0,.15)');}
+ else if(k==='checker'){for(let y=F,r=0;y<H;y+=24,r++)for(let x=0,i=0;x<W;x+=24,i++)R(x,y,24,24,(i+r)%2?'#222':'#eee');}
+ else if(k==='stonefl'||k==='castlestone'){R(0,F,W,fh,k==='castlestone'?'#4d4d57':'#8d877c');for(let y=F,r=0;y<H;y+=26,r++)for(let x=(r%2)*-25;x<W;x+=50)R(x+1,y+1,48,24,(x+y)%3?(k==='castlestone'?'#55555f':'#968f83'):(k==='castlestone'?'#5d5d68':'#9e978a'));}
+ else if(k==='redcarpet'||k==='bluecarpet'){R(0,F,W,fh,k==='redcarpet'?'#9b2335':'#2a4f8f');c.strokeStyle='rgba(255,215,120,.5)';c.lineWidth=3;c.strokeRect(14,F+10,W-28,fh-20);}
+ else if(k==='marble'){R(0,F,W,fh,'#ece8e0');c.strokeStyle='rgba(120,110,100,.25)';c.lineWidth=1;for(let i=0;i<14;i++){c.beginPath();c.moveTo((i*131)%W,F);c.lineTo((i*131+70)%W,H);c.stroke();}for(let x=0;x<W;x+=60)R(x,F,1,fh,'rgba(0,0,0,.08)');}
+ else if(k==='obsidian'){R(0,F,W,fh,'#120f16');for(let y=F,r=0;y<H;y+=30,r++)for(let x=(r%2)*-35;x<W;x+=70)R(x+2,y+2,66,26,'#1d1824');c.fillStyle=`rgba(255,90,20,${.25+.1*Math.sin(Date.now()/400)})`;for(let x=0;x<W;x+=70)c.fillRect(x,F,2,fh);}
+ else if(k==='crystalfl'){R(0,F,W,fh,'#3b2f5c');for(let i=0;i<60;i++){c.fillStyle=['#a78bfa','#7dd3fc','#f0abfc'][i%3];c.fillRect((i*53)%W,F+(i*17)%fh,6,4);}}
+ else if(k==='goldfl'){for(let y=F,r=0;y<H;y+=24,r++)for(let x=0,i=0;x<W;x+=24,i++)R(x,y,24,24,(i+r)%2?'#d4a72c':'#f2cf5b');}
+ else if(k==='grass'){R(0,F,W,fh,'#4f9a3a');for(let i=0;i<220;i++)R((i*37)%W,F+(i*23)%fh,2,5,'#3d7d2c');}
+ R(0,F-4,W,6,'#3a2414');}
+function cabWindow(c,x,y,w,h,v,t,arch){const R=(a,b,cw,ch,col)=>{c.fillStyle=col;c.fillRect(a,b,cw,ch);};
+ const sky={day:'#bfe0ff',sunset:'#ff9a5a',night:'#0d1433',snow:'#cfd8e6',aurora:'#0b1f2a',skyhigh:'#7fc0ff',underwater:'#0b4f6c',aurora2:'#1b1033'}[v]||'#bfe0ff';R(x,y,w,h,sky);
+ if(v==='skyhigh'){c.fillStyle='#fff';for(let i=0;i<3;i++){c.beginPath();c.arc(x+((i*40+t*10)%w),y+h*.75,10,0,7);c.fill();}}
+ if(v==='underwater'){for(let i=0;i<6;i++){c.fillStyle='rgba(255,255,255,.5)';c.beginPath();c.arc(x+((i*23)%w),y+h-((t*20+i*15)%h),2,0,7);c.fill();}c.font='14px serif';c.fillText('🐟',x+((t*12)%w),y+h*.5);}
+ if(v==='aurora2'){c.font='16px serif';['🔥','💧','🌪️','🪨'].forEach((s,i)=>{c.globalAlpha=.5+.5*Math.sin(t*2+i);c.fillText(s,x+8+i*w/4,y+h*.5);});c.globalAlpha=1;}
+ if(v==='sunset'){R(x,y+h*.55,w,h*.45,'#ffcf6a');c.fillStyle='#fff3b0';c.beginPath();c.arc(x+w*.5,y+h*.75,10,0,7);c.fill();}
+ if(v==='day'){c.fillStyle='#fff';c.beginPath();c.arc(x+w*.3,y+h*.35,8,0,7);c.arc(x+w*.42,y+h*.33,10,0,7);c.fill();}
+ if(v==='night'||v==='aurora'){for(let i=0;i<8;i++)R(x+((i*29)%w),y+((i*17)%h),2,2,'#fff');}
+ if(v==='aurora'){for(let i=0;i<3;i++){c.fillStyle=`rgba(${80+i*40},255,${160+i*30},${.25+.15*Math.sin(t*2+i)})`;c.fillRect(x,y+h*(.15+i*.15),w,h*.12);}}
+ if(v==='snow'){for(let i=0;i<14;i++){const sx=x+((i*31+t*12)%w),sy=y+((i*19+t*30)%h);R(sx,sy,2,2,'#fff');}}
+ const fr=arch?'#2b2b33':'#4a3020';R(x-2,y-2,w+4,4,fr);R(x-2,y+h-2,w+4,4,fr);R(x-2,y-2,4,h+4,fr);R(x+w-2,y-2,4,h+4,fr);R(x+w/2-2,y-2,4,h+4,fr);R(x-2,y+h/2-1,w+4,3,fr);}
+drawCabin=function(cv){const c=cv.getContext('2d'),W=cv.width,H=cv.height,F=Math.round(H*.6),t=performance.now()/1000,cb=cabFix(),hs=houseOf();c.imageSmoothingEnabled=false;
+ cabWall(c,STY_ON(cb,'wall'),W,F,t);
+ const n=hs.win,ww=hs.tier>=2?90:100,wh=hs.tier>=3?96:70;for(let i=0;i<n;i++){const x=Math.round(W*(i+1)/(n+1)-ww/2);cabWindow(c,x,hs.tier>=3?28:40,ww,wh,STY_ON(cb,'view'),t,hs.tier>=3);}
+ cabFloor(c,STY_ON(cb,'floor'),W,F,H);
+ if(hs.id==='lair'){c.fillStyle=`rgba(255,80,20,${.12+.05*Math.sin(t*2)})`;c.fillRect(0,F-30,W,30);c.font='34px serif';c.textAlign='center';[[W*.04,F*.5],[W*.96,F*.5]].forEach(([x,y])=>c.fillText('🌋',x,y));}
+ if(hs.id==='sky'){c.font='30px serif';c.textAlign='center';c.globalAlpha=.9;c.fillText('🌈',W*.5,40);c.globalAlpha=1;}
+ if(hs.tier>=2&&!hs.raid){c.fillStyle='#c79a4a';c.fillRect(W/2-1,0,3,26);c.font='38px serif';c.textAlign='center';c.fillText('🪔',W/2,58);c.fillStyle=`rgba(255,220,120,${.1+.04*Math.sin(t*3)})`;c.beginPath();c.arc(W/2,46,70,0,7);c.fill();}
+ if(hs.id==='castle'){[[W*.03,F*.35],[W*.97,F*.35]].forEach(([x,y])=>{c.font='30px serif';c.textAlign='center';c.fillText('🔥',x,y);c.fillStyle=`rgba(255,150,50,${.15+.08*Math.sin(t*7+x)})`;c.beginPath();c.arc(x,y-10,34,0,7);c.fill();});
+  [[W*.2,'#8a1c2b'],[W*.8,'#1c3f8a']].forEach(([x,col])=>{c.fillStyle=col;c.fillRect(x-14,6,28,64);c.beginPath();c.moveTo(x-14,70);c.lineTo(x,82);c.lineTo(x+14,70);c.fill();c.fillStyle='#ffcf4a';c.fillRect(x-14,6,28,4);});}
+ if(cabinHas('trophy')){const tr=(hero.cleared||[]).slice().sort((a,b)=>a-b);tr.forEach((d,i)=>{const bd=DUNGEONS[d-1],x=12+(i%10)*24,y=8+Math.floor(i/10)*26;c.fillStyle='#3a2410';c.fillRect(x,y,22,22);drawSpr(c,bd[2],x+1,y+1,20,Object.keys(bd[4]).length?bd[4]:null);});
+  RAIDS.forEach((R,i)=>{if(!(hero.raids||{})[R.id])return;const x=W-60-i*48,y=H-52;c.fillStyle='#ffcf4a';c.fillRect(x-2,y-2,44,44);c.fillStyle='#3a2410';c.fillRect(x,y,40,40);drawSpr(c,R.boss.type,x+2,y+2,36,R.boss.pal);});
+  c.fillStyle='#ffe9a8';c.font='bold 11px Nunito,sans-serif';c.textAlign='left';c.fillText(`🏆 ${tr.length}/20 bosses · ${Object.keys(hero.raids||{}).length}/${RAIDS.length} raids`,12,H-8);}
+ const shown=ALLDECOR().filter(f=>f.s&&cabinHas(f.id)&&!cb.hid.includes(f.id)).map(f=>({f,p:cabPos(f,W,H)})).sort((a,b)=>a.p[1]-b.p[1]);
+ c.textAlign='center';shown.forEach(({f,p})=>{if(f.boss){const col=RAR[f.r].c;c.fillStyle=col;c.globalAlpha=.18+.08*Math.sin(t*3);c.beginPath();c.arc(p[0],p[1]-f.s*.35,f.s*.6,0,7);c.fill();c.globalAlpha=1;}
+  c.fillStyle='#000';c.font=`${f.s}px serif`;c.fillText(f.i,p[0],p[1]);
+  if(f.id==='fire'){c.fillStyle=`rgba(255,160,60,${.12+.06*Math.sin(t*6)})`;c.beginPath();c.arc(p[0],p[1]-14,60,0,7);c.fill();}
+  if(f.id==='petbed'){const pt=activePet();if(pt)drawSpr(c,pt.spr,p[0]-18,p[1]-28,36,pt.pal);}
+  if(CAB_UI.sel===f.id){c.strokeStyle='#ffcf4a';c.lineWidth=2;c.setLineDash([4,3]);c.strokeRect(p[0]-f.s*.6,p[1]-f.s,f.s*1.2,f.s*1.15);c.setLineDash([]);}});
+ drawSpr(c,HK(),W*.47,F+10,72);
+ const L=STY_ON(cb,'light');if(L!=='bright'){c.fillStyle=L==='cozy'?'rgba(60,30,10,.28)':'rgba(5,8,30,.5)';c.fillRect(0,0,W,H);c.globalCompositeOperation='lighter';shown.forEach(({f,p})=>{if(['fire','lamp','candles','mushlamp','tv','crystal','phoenix'].includes(f.id)){c.fillStyle='rgba(255,180,80,.18)';c.beginPath();c.arc(p[0],p[1]-f.s*.4,f.s*1.4,0,7);c.fill();}});c.globalCompositeOperation='source-over';}
+ c.textAlign='left';
+ if(cb.name){c.font='bold 13px Nunito,sans-serif';const tw=c.measureText(cb.name).width+20;c.fillStyle='rgba(58,36,20,.85)';c.fillRect(W-tw-8,8,tw,22);c.fillStyle='#ffe9a8';c.fillText(cb.name,W-tw+2,24);}};
+const CAB_UI={tab:'shop',sel:null,anim:0};
+function cabRedraw(){const cv=$('#cabCv');if(cv)drawCabin(cv);}
+openCabin=function(){if(!hero)return;
+ if(!hero.cabin){const H0=HOUSES[0];openModal(`<h2 class="px gold">🏡 Your Own Cabin</h2><p>Buy a cozy cabin at camp! Decorate it with furniture, choose walls and floors, show off a trophy wall of every boss you've beaten, and later upgrade to a cottage, manor, or castle. Bosses sometimes drop rare decorations too!</p><div class="statrow"><span>🪙 ${hero.gold} gold</span></div><div class="row"><button class="btn gold" id="cbBuy" ${hero.gold<H0.p?'disabled':''}>🏡 Buy the cabin (${H0.p}g)</button></div>${hero.gold<H0.p?`<p class="mini">You need ${H0.p-hero.gold} more gold.</p>`:''}${(hero.decor||[]).length?`<p class="mini">🎁 You already have ${hero.decor.length} boss decoration${hero.decor.length>1?'s':''} waiting to display!</p>`:''}`);
+  const b=$('#cbBuy');if(b)b.onclick=()=>{if(hero.gold<H0.p)return;hero.gold-=H0.p;hero.cabin={items:(hero.decor||[]).slice(),house:'cabin'};snd('level');saveHero();openCabin();};return;}
+ const cb=cabFix(),hs=houseOf(),owned=cb.items,tabs=[['shop','🪑 Furniture'],['style','🎨 Decorate'],['arrange','📍 Arrange'],['boss','💎 Boss & Raid Drops'],['house','🏰 Houses']];
+ const ownCount=ALLDECOR().filter(f=>owned.includes(f.id)).length;
+ const fitem=f=>{const own=owned.includes(f.id),lock=f.need&&!f.need(hero),small=(f.h||0)>hs.tier;return`<div class="witem${own?' on':''}" style="cursor:default"><div style="font-size:30px">${f.i}</div><div class="iinfo"><b>${esc(f.n)}</b><div class="mini">${esc(f.perk)}${small?` · needs a ${HOUSES[f.h].n} or bigger`:''}</div></div>${own?'<span class="mini">✔ Owned</span>':`<button class="btn sm gold" data-fu="${f.id}" ${hero.gold<f.p||lock||small?'disabled':''}>${lock||small?'🔒':f.p+'g'}</button>`}</div>`;};
+ let body='';
+ if(CAB_UI.tab==='shop')body=`<div class="wgrid">${FURN.map(fitem).join('')}</div>`;
+ else if(CAB_UI.tab==='style'){body=`<div class="row"><input id="cbName" maxlength="24" placeholder="Name your house (optional)" value="${esc(cb.name||'')}" style="flex:1"><button class="btn sm" id="cbNameOk">✔ Save name</button></div>`+Object.entries(CAB_STYLES).map(([k,L])=>`<h3>${STYLE_LBL[k]}</h3><div class="row wrap">${L.map(([id,n,p])=>{const own=styOwned(cb,k,id,p),on=STY_ON(cb,k)===id,rd=p<0;if(rd&&!own)return`<button class="btn sm" disabled title="Raid drop: ${esc(matFrom(k+':'+id))}">🔒 ${esc(n)} · raid drop</button>`;return`<button class="btn sm${on?' gold':''}" data-sty="${k}:${id}" ${!own&&hero.gold<p?'disabled':''} ${rd?`style="border-color:${RAR[3].c}"`:''}>${on?'✔ ':''}${rd?'💠 ':''}${esc(n)}${own?'':` · ${p}g`}</button>`;}).join('')}</div>`).join('')+`<p class="mini">Styles you buy are yours to switch between anytime. 💠 Raid materials only drop from raid bosses (about 1 in 3 raid wins).</p>`;}
+ else if(CAB_UI.tab==='arrange'){const mine=ALLDECOR().filter(f=>f.s&&owned.includes(f.id));body=`<p>Drag furniture around the room with your mouse or finger — or tap an item below, then tap where it should go. Put away things you don't want out.</p>${CAB_UI.sel?`<p class="mini" style="color:#ffcf4a">📍 Now tap the room to place <b>${esc(FBY[CAB_UI.sel].n)}</b>.</p>`:''}<div class="wgrid">${mine.map(f=>{const hid=cb.hid.includes(f.id);return`<div class="witem${CAB_UI.sel===f.id?' on':''}" style="cursor:default"><div style="font-size:26px;opacity:${hid?.35:1}">${f.i}</div><div class="iinfo"><b>${esc(f.n)}</b></div><button class="btn sm" data-mv="${f.id}" ${hid?'disabled':''}>📍 Move</button><button class="btn sm" data-hd="${f.id}">${hid?'📤 Put out':'📦 Put away'}</button></div>`;}).join('')||'<p class="mini">Buy some furniture first!</p>'}</div><div class="row"><button class="btn sm" id="cbReset">↺ Reset layout</button></div>`;}
+ else if(CAB_UI.tab==='boss'){const have=hero.decor||[];body=`<p>These decorations can't be bought — they only drop from bosses, and not very often. About 1 in 8 boss wins drops one (raid bosses: 1 in 4). Rarer ones are harder to get:</p><div class="row wrap">${[1,2,3,4].map(r=>`<span class="mini" style="color:${RAR[r].c}"><b>${RAR[r].n}</b> ${DECOR_W[r]}%</span>`).join(' · ')}</div><div class="wgrid">${BOSS_DECOR.map(f=>{const got=have.includes(f.id);return`<div class="witem${got?' on':''}" style="cursor:default;border-color:${RAR[f.r].c}"><div style="font-size:30px;${got?'':'filter:grayscale(1) brightness(.4)'}">${f.i}</div><div class="iinfo"><b style="color:${RAR[f.r].c}">${got?esc(f.n):'???'}</b><div class="mini">${RAR[f.r].n}${got?' · '+esc(f.perk):' · not found yet'}</div></div></div>`;}).join('')}</div><p class="mini">Found ${have.length}/${BOSS_DECOR.length}.</p><h3>🏰 Raid drops</h3><p class="mini">Raid bosses can also drop house deeds and special building materials.</p><div class="row wrap">${['sky','lair'].map(x=>`<span class="mini">${(hero.deeds||[]).includes(x)?'📜 ✔':'📜 ✖'} ${HBY[x].n} Deed</span>`).join(' · ')}</div><div class="row wrap">${[].concat(...Object.values(HOUSE_RMAT)).filter((v,i,a)=>a.indexOf(v)===i).map(x=>{const[k,id]=x.split(':'),st=CAB_STYLES[k].find(y=>y[0]===id),got=(hero.rmat||[]).includes(x);return`<span class="mini" style="color:${got?RAR[3].c:'#888'}">${got?'💠':'🔒'} ${st[1]} <i>(${esc(matFrom(x))})</i></span>`;}).join(' · ')}</div>`;}
+ else{const built=cabBuilt(),top=Math.max(...NORMAL_H.map((x,i)=>built.includes(x.id)?i:-1));
+  body=`<p>Upgrade to a bigger house, or move into any house you own. All your furniture, styles, and boss decorations come with you.</p><div class="wgrid">${HOUSES.map(x=>{const cur=hs.id===x.id,own=built.includes(x.id);let btn;
+   if(cur)btn='<span class="mini">🏡 Home</span>';else if(own)btn=`<button class="btn sm" data-mvin="${x.id}">🚚 Move in</button>`;
+   else if(x.raid){const deed=(hero.deeds||[]).includes(x.id);btn=deed?`<button class="btn sm gold" data-hb="${x.id}" ${hero.gold<x.p?'disabled':''}>📜 Build ${x.p}g</button>`:'<span class="mini">🔒 Needs deed</span>';}
+   else{const next=NORMAL_H.findIndex(y=>y.id===x.id)===top+1;btn=`<button class="btn sm gold" data-hb="${x.id}" ${!next||hero.gold<x.p?'disabled':''}>${next?x.p+'g':'🔒'}</button>`;}
+   return`<div class="witem${cur?' on':''}" style="cursor:default${x.raid?';border-color:'+RAR[4].c:''}"><div style="font-size:32px">${x.i}</div><div class="iinfo"><b${x.raid?` style="color:${RAR[4].c}"`:''}>${esc(x.n)}${x.raid?' (raid house)':''}</b><div class="mini">${esc(x.d)}</div></div>${btn}</div>`;}).join('')}</div>
+  <p class="mini">Bigger houses unlock more furniture in the shop. Raid houses need a deed from a raid boss (about 1 in 5 raid wins drops one), then gold to build.</p>`;}
+ openModal(`<h2 class="px gold">${hs.i} ${esc(cb.name||hero.name+"'s "+hs.n)}</h2><canvas id="cabCv" width="${hs.W}" height="${hs.H}" style="width:100%;border-radius:12px;border:3px solid #4a3020;display:block;touch-action:none;cursor:${CAB_UI.tab==='arrange'?'grab':'default'}"></canvas>
+ <div class="statrow"><span>🪙 ${hero.gold} gold</span><span>🪑 ${ownCount}/${FURN.length+BOSS_DECOR.length} decorations</span><span>💎 ${(hero.decor||[]).length}/${BOSS_DECOR.length} boss decor</span></div>
+ <div class="row wrap">${tabs.map(([k,l])=>`<button class="btn sm${CAB_UI.tab===k?' gold':''}" data-ctab="${k}">${l}</button>`).join('')}</div>${body}`);
+ const cv=$('#cabCv');drawCabin(cv);
+ clearInterval(CAB_UI.anim);CAB_UI.anim=setInterval(()=>{if(!document.body.contains(cv)){clearInterval(CAB_UI.anim);return;}drawCabin(cv);},120);
+ document.querySelectorAll('[data-ctab]').forEach(b=>b.onclick=()=>{CAB_UI.tab=b.dataset.ctab;CAB_UI.sel=null;openCabin();});
+ document.querySelectorAll('[data-fu]').forEach(b=>b.onclick=()=>{const f=FBY[b.dataset.fu];if(hero.gold<f.p||owned.includes(f.id)||(f.h||0)>hs.tier)return;hero.gold-=f.p;owned.push(f.id);snd('chest');saveHero();openCabin();});
+ document.querySelectorAll('[data-sty]').forEach(b=>b.onclick=()=>{const[k,id]=b.dataset.sty.split(':');const p=CAB_STYLES[k].find(x=>x[0]===id)[2];const key=k+':'+id;if(p<0&&!styOwned(cb,k,id,p))return;if(p>0&&!styOwned(cb,k,id,p)){if(hero.gold<p)return;hero.gold-=p;cb.styles.push(key);snd('chest');}cb[k]=id;saveHero();openCabin();});
+ const nb=$('#cbNameOk');if(nb)nb.onclick=()=>{cb.name=($('#cbName').value||'').replace(/[<>]/g,'').trim().slice(0,24);saveHero();openCabin();};
+ document.querySelectorAll('[data-hb]').forEach(b=>b.onclick=()=>{const x=HBY[b.dataset.hb],built=cabBuilt();if(built.includes(x.id)||hero.gold<x.p)return;if(x.raid){if(!(hero.deeds||[]).includes(x.id))return;}else{const top=Math.max(...NORMAL_H.map((y,i)=>built.includes(y.id)?i:-1));if(NORMAL_H.findIndex(y=>y.id===x.id)!==top+1)return;}hero.gold-=x.p;built.push(x.id);cb.house=x.id;snd('level');saveHero();CAB_UI.tab='shop';openCabin();});
+ document.querySelectorAll('[data-mvin]').forEach(b=>b.onclick=()=>{const id=b.dataset.mvin;if(!cabBuilt().includes(id))return;cb.house=id;snd('chest');saveHero();openCabin();});
+ document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{CAB_UI.sel=CAB_UI.sel===b.dataset.mv?null:b.dataset.mv;openCabin();});
+ document.querySelectorAll('[data-hd]').forEach(b=>b.onclick=()=>{const id=b.dataset.hd,i=cb.hid.indexOf(id);if(i>=0)cb.hid.splice(i,1);else cb.hid.push(id);if(CAB_UI.sel===id)CAB_UI.sel=null;saveHero();openCabin();});
+ const rs=$('#cbReset');if(rs)rs.onclick=()=>{cb.pos={};cb.hid=[];saveHero();openCabin();};
+ if(CAB_UI.tab==='arrange'){const pt=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height];};
+  const hit=(x,y)=>{let best=null,bd=1e9;ALLDECOR().forEach(f=>{if(!f.s||!owned.includes(f.id)||cb.hid.includes(f.id))return;const p=cabPos(f,cv.width,cv.height),dx=x-p[0],dy=y-(p[1]-f.s*.4),d=dx*dx+dy*dy;if(d<(f.s*.7)**2&&d<bd){bd=d;best=f;}});return best;};
+  const place=(id,x,y)=>{cb.pos[id]=[Math.max(.02,Math.min(.98,x/cv.width)),Math.max(.12,Math.min(.99,y/cv.height))];};
+  let drag=null;
+  cv.onpointerdown=e=>{const[x,y]=pt(e);if(CAB_UI.sel){place(CAB_UI.sel,x,y);CAB_UI.sel=null;saveHero();openCabin();return;}const f=hit(x,y);if(f){drag=f.id;CAB_UI.sel=f.id;cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing';}};
+  cv.onpointermove=e=>{if(!drag)return;const[x,y]=pt(e);place(drag,x,y);drawCabin(cv);};
+  cv.onpointerup=()=>{if(!drag)return;drag=null;CAB_UI.sel=null;cv.style.cursor='grab';saveHero();drawCabin(cv);};}};
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
