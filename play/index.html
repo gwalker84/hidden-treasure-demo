@@ -7346,6 +7346,21 @@ try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","�
  const dayKey=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  let A=null; // current arena session
+ const BADW=['fuck','shit','bitch','cunt','pussy','slut','whore','nigg','fag','retard','penis','vagina','boob','porn','sex','nazi','hitler','kkk','bastard','damn','piss','twat','wank','jizz','tits','dildo','butthole','asshole','dumbass','jackass','dick','kys','suicide','killyourself'];
+ const norm=s=>String(s||'').toLowerCase().replace(/[0@]/g,'o').replace(/[1!|]/g,'i').replace(/3/g,'e').replace(/4/g,'a').replace(/[5$]/g,'s').replace(/7/g,'t').replace(/[^a-z]/g,'');
+ const CLN={warrior:'Warrior',cleric:'Cleric',ranger:'Ranger',mage:'Mage'};
+ const badName=n=>{const t=norm(n).replace(/dicken|benedick|dickinson/g,'');return BADW.some(w=>t.includes(w));};
+ const safeName=(n,c)=>badName(n)?'Hero '+(CLN[c]||''):n;
+ let HIDE={};
+ async function loadHide(){const sc=await mySchool(),db=FB();if(!sc||!db)return;try{const q=await db.collection('arenaHide').where('school','==',sc).get();HIDE={};q.docs.forEach(d=>HIDE[d.id]=1);}catch(e){}}
+ const showName=(n,c,uid)=>uid&&HIDE[uid]?'Hero (renamed)':safeName(n,c);
+ const isTeach=()=>{try{const u=window.MWQ_AUTH.currentUser;return!!(u&&!u.isAnonymous);}catch(e){return false;}};
+ function arenaRule(){let c=null;try{c=typeof classCfg==='function'?classCfg():null;}catch(e){}return Object.assign({mode:'on',from:'14:30',to:'15:20',wk:true},settings.arena||{},(c&&c.arena)||{});}
+ const t12=t=>{const[h,m]=String(t).split(':').map(Number);return((h%12)||12)+':'+String(m).padStart(2,'0')+(h<12?' AM':' PM');};
+ function arenaClosed(){const r=arenaRule();if(r.mode==='off')return'🔒 The Arena is closed right now. Your teacher turned it off.';
+  if(r.mode==='times'){const d=new Date(),day=d.getDay(),now=d.getHours()*60+d.getMinutes(),[fh,fm]=String(r.from).split(':').map(Number),[th,tm]=String(r.to).split(':').map(Number);
+   if((r.wk&&(day===0||day===6))||now<fh*60+fm||now>=th*60+tm)return`⏰ The Arena is open from <b>${t12(r.from)}</b> to <b>${t12(r.to)}</b>${r.wk?' on school days':''}. Come back then!`;}return'';}
+ function closedBox(msg){openModal(`<h2 class="px gold">⚔️ Daily Arena</h2><p>${msg}</p><div class="row"><button class="btn" id="arX2">OK</button></div>`);$('#arX2').onclick=()=>closeModal();}
  const css=document.createElement('style');css.textContent=`
  .arTop{display:flex;gap:10px;align-items:stretch;margin:6px 0 10px}.arSide{flex:1;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px 10px;min-width:0}
  .arSide b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.arHp{height:12px;border-radius:7px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:6px}.arHp i{display:block;height:100%;background:linear-gradient(90deg,#3ad16b,#9be15d);transition:width .4s}
@@ -7366,7 +7381,7 @@ try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","�
  function snap(){const C=CL(),L=hero.level-1,ab=C.atk+L*C.atkG,hb=C.hp+L*C.hpG;
   const pw=+clamp(Math.sqrt(atk()/ab),1,1.35).toFixed(3),hw=+clamp(Math.sqrt(maxHP()/hb),1,1.3).toFixed(3);
   const st=hero.stats||{},acc=st.total>10?clamp(st.correct/st.total,.35,.95):.7;
-  return{name:String(hero.name||'Hero').slice(0,18),cls:hero.cls,lvl:hero.level,pw,hp:Math.round(100*hw),crit:hero.cls==='ranger'?20:5,acc:+acc.toFixed(2),avgT:6};}
+  return{name:safeName(String(hero.name||'Hero').slice(0,18),hero.cls),cls:hero.cls,lvl:hero.level,pw,hp:Math.round(100*hw),crit:hero.cls==='ranger'?20:5,acc:+acc.toFixed(2),avgT:6};}
  const clsFx=c=>({take:c==='warrior'?.85:1,heal:c==='cleric'?4:0,dmg:c==='mage'?1.1:1});
  function hitDmg(f,secs,rng){let d=12*f.pw*(1+.5*clamp((QSEC-secs)/QSEC,0,1))*clsFx(f.cls).dmg;let crit=false;if((rng||Math.random)()*100<f.crit){d*=1.75;crit=true;}return{d:Math.round(d),crit};}
  // ---------- question set (same 8 questions for both players) ----------
@@ -7376,7 +7391,7 @@ try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","�
  // ---------- daily record ----------
  function today(){hero.arena=hero.arena||{};if(hero.arena.day!==dayKey())Object.assign(hero.arena,{day:dayKey(),n:0,pts:0,w:0,l:0});return hero.arena;}
  // ---------- UI ----------
- function hub(tab){const S=snap(),br=brOf(hero.level),td=today();
+ function hub(tab){{const cl=arenaClosed();if(cl&&!isTeach()){closedBox(cl);return;}}loadHide();const S=snap(),br=brOf(hero.level),td=today();
   openModal(`<h2 class="px gold">⚔️ Daily Arena</h2>
   <p>Battle another hero in your level bracket (<b>${brName(br)}</b>). You both answer the <b>same ${NQ} questions</b>. Correct answers hit, faster answers hit harder, and your gear and talents count — but everyone in a bracket is kept close to fair.</p>
   <div class="item"><div>Today: <b>${td.pts}</b> points · ${td.w} wins · ${td.l} losses · ranked battles left: <b>${Math.max(0,CAP-td.n)}</b> of ${CAP}</div><div class="mini">Win = 3 points (2 vs a ghost) · Loss = 1 point for showing up · Rankings reset every day.</div></div>
@@ -7384,7 +7399,7 @@ try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","�
   <div class="arLog" id="arMsg" style="margin-top:8px"></div>`);
   $('#arGo').onclick=()=>queue();$('#arRanks').onclick=()=>ranks(br);$('#arX').onclick=()=>closeModal();
   mySchool().then(s=>{const m=$('#arMsg');if(m&&!s)m.innerHTML='🧪 <b>Practice arena</b> — you\'ll fight practice opponents. Live matches and school rankings need the full version with a school code.';});}
- async function queue(){const S=snap(),br=brOf(hero.level);A={me:S,br,qs:null,i:0,myDealt:0,myHeal:0,oppDealt:0,oppHeal:0,oppI:0,oppDone:false,done:false,unsubs:[],t0:0,times:[]};
+ async function queue(){{const cl=arenaClosed();if(cl&&!isTeach()){cleanup(true);closedBox(cl);return;}}const S=snap(),br=brOf(hero.level);A={me:S,br,qs:null,i:0,myDealt:0,myHeal:0,oppDealt:0,oppHeal:0,oppI:0,oppDone:false,done:false,unsubs:[],t0:0,times:[]};
   openModal(`<h2 class="px gold">⚔️ Finding a match…</h2><p>Looking for a hero in <b>${brName(br)}</b> at your school.</p><div class="arBar"><i id="arWait" style="width:0%"></i></div><p class="mini" id="arWaitTx">If nobody is free in ${WAIT} seconds, you'll battle a ghost — a saved copy of a classmate's hero.</p><div class="row"><button class="btn" id="arCancel">Cancel</button></div>`,false);
   $('#arCancel').onclick=()=>{cleanup(true);hub();};
   const sc=await mySchool(),db=FB();
@@ -7407,7 +7422,7 @@ try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","�
   if(!A||A.match)return;if(got&&got!=='x'){A.match=got;joinMatch(got,false);return;}ghostOrBot(A.school);}
  async function ghostOrBot(sc){if(!A)return;let g=null;const db=FB();
   if(sc&&db){try{const qs=await db.collection('arenaG').where('school','==',sc).where('br','==',A.br).limit(30).get();
-   const list=qs.docs.filter(d=>d.id!==A.uid).map(d=>d.data().s);if(list.length)g=pick(list);}catch(e){}}
+   const list=qs.docs.filter(d=>d.id!==A.uid).map(d=>Object.assign({uid:d.id},d.data().s));if(list.length)g=pick(list);}catch(e){}}
   const ghost=!!g;if(!g){const lv=clamp(hero.level+Math.floor(Math.random()*3)-1,BR[A.br][0],Math.min(BR[A.br][1],hero.level+2));
    g={name:pick(BOTS),cls:pick(['warrior','cleric','ranger','mage']),lvl:lv,pw:+(1+Math.random()*.25).toFixed(2),hp:100+Math.floor(Math.random()*20),crit:5,acc:.55+Math.random()*.25,avgT:4+Math.random()*5};}
   A.opp=g;A.mode=ghost?'ghost':'bot';A.qs=pickQs();A.sim=simulate(g);start();}
@@ -7424,7 +7439,7 @@ try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","�
   ask();}
  function frame(){const me=A.me,op=A.opp,hm=hpOf('me'),ho=hpOf('opp');
   return`<div class="arTop"><div class="arSide"><b>${CICON[me.cls]||''} ${esc(me.name)} (you)</b><span class="mini">Lv ${me.lvl} · ${hm}/${me.hp} HP</span><div class="arHp"><i style="width:${hm/me.hp*100}%"></i></div></div>
-  <div class="arVs">VS</div><div class="arSide them"><b>${CICON[op.cls]||''} ${esc(op.name)}${A.mode==='ghost'?' 👻':A.mode==='bot'?' 🤖':''}</b><span class="mini">Lv ${op.lvl} · ${ho}/${op.hp} HP · Q ${Math.min(A.oppI+1,NQ)}/${NQ}</span><div class="arHp"><i style="width:${ho/op.hp*100}%"></i></div></div></div>`;}
+  <div class="arVs">VS</div><div class="arSide them"><b>${CICON[op.cls]||''} ${esc(showName(op.name,op.cls,op.uid))}${A.mode==='ghost'?' 👻':A.mode==='bot'?' 🤖':''}</b><span class="mini">Lv ${op.lvl} · ${ho}/${op.hp} HP · Q ${Math.min(A.oppI+1,NQ)}/${NQ}</span><div class="arHp"><i style="width:${ho/op.hp*100}%"></i></div></div></div>`;}
  function draw(){const f=$('#arFrame');if(f)f.innerHTML=frame();}
  function ask(){if(!A||A.done)return;if(A.i>=NQ){wait();return;}const q=A.qs[A.i];A.qStart=Date.now();
   openModal(`<div id="arFrame">${frame()}</div><div class="mini">Question ${A.i+1} of ${NQ}</div><div class="arBar"><i id="arTime" style="width:100%"></i></div>
@@ -7458,18 +7473,19 @@ try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","�
   if(ranked){try{await db.doc('arenaR/'+td.day+'_'+uid).set({school:sc,day:td.day,br:brOf(hero.level),name:S.name,cls:S.cls,lvl:S.lvl,pts:td.pts,w:td.w,l:td.l,t:TS()});}catch(e){}}}
  function cleanup(cancel){if(!A)return;clearInterval(A.waitT);clearTimeout(A.qT);clearInterval(A.simT);clearInterval(A.watch);A.unsubs.forEach(u=>{try{u();}catch(e){}});
   const db=FB();if(db&&A.uid){try{db.doc('arenaQ/'+A.uid).delete();}catch(e){}}if(cancel)A=null;}
- async function ranks(br){const sc=await mySchool(),db=FB();
+ async function ranks(br){const sc=await mySchool(),db=FB();await loadHide();
   if(!sc||!db){openModal(`<h2 class="px gold">🏆 Arena Rankings</h2><p>School rankings are part of the full version. In the practice arena, keep track of your own points: today you have <b>${today().pts}</b>.</p><div class="row"><button class="btn" id="arB">Back</button></div>`);$('#arB').onclick=()=>hub();return;}
   openModal(`<h2 class="px gold">🏆 Today's Arena Rankings</h2><div class="arTabs">${BR.map((b,i)=>`<button class="btn sm${i===br?' gold':''}" data-br="${i}">${brName(i)}</button>`).join('')}</div><div id="arList">Loading…</div><div class="row" style="margin-top:10px"><button class="btn" id="arB">Back</button></div>`);
-  document.querySelectorAll('[data-br]').forEach(b=>b.onclick=()=>ranks(+b.dataset.br));$('#arB').onclick=()=>hub();
+  document.querySelectorAll('[data-br]').forEach(b=>b.onclick=()=>ranks(+b.dataset.br));$('#arB').onclick=()=>{if(hero&&!arenaClosed())hub();else closeModal();};
   try{const qs=await db.collection('arenaR').where('school','==',sc).where('day','==',dayKey()).get();const uid=myUid();
    const rows=qs.docs.map(d=>Object.assign({id:d.id},d.data())).filter(r=>r.br===br).sort((a,b)=>b.pts-a.pts||b.w-a.w||a.l-b.l).slice(0,25);
-   $('#arList').innerHTML=rows.length?`<table class="arRank"><tr><th>#</th><th>Hero</th><th>Lv</th><th>Pts</th><th>W–L</th></tr>${rows.map((r,i)=>`<tr class="${r.id.endsWith('_'+uid)?'me':''}"><td>${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</td><td>${CICON[r.cls]||''} ${esc(r.name)}</td><td>${r.lvl}</td><td><b>${r.pts}</b></td><td>${r.w}–${r.l}</td></tr>`).join('')}</table>`:'<p>No battles in this bracket yet today. Be the first!</p>';}
+   $('#arList').innerHTML=rows.length?`<table class="arRank"><tr><th>#</th><th>Hero</th><th>Lv</th><th>Pts</th><th>W–L</th></tr>${rows.map((r,i)=>`<tr class="${r.id.endsWith('_'+uid)?'me':''}"><td>${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</td><td>${CICON[r.cls]||''} ${esc(showName(r.name,r.cls,r.id.split('_').pop()))}${isTeach()?` <button class="btn sm" data-hide="${esc(r.id.split('_').pop())}">${HIDE[r.id.split('_').pop()]?'↩️ Show name':'🚫 Hide name'}</button>`:''}</td><td>${r.lvl}</td><td><b>${r.pts}</b></td><td>${r.w}–${r.l}</td></tr>`).join('')}</table>`:'<p>No battles in this bracket yet today. Be the first!</p>';
+   document.querySelectorAll('[data-hide]').forEach(b=>b.onclick=async()=>{const u=b.dataset.hide;try{if(HIDE[u])await db.doc('arenaHide/'+u).delete();else await db.doc('arenaHide/'+u).set({school:sc,t:TS()});}catch(e){toast('Only a signed-in teacher can do that.');}ranks(br);});}
   catch(e){$('#arList').innerHTML='<p>Rankings couldn\'t load right now. Try again in a moment.</p>';}}
- window.HTQ_ARENA={hub,snap,brOf,hitDmg};
+ window.HTQ_ARENA={hub,snap,brOf,hitDmg,ranks,arenaRule,arenaClosed,safeName,badName};
  // ---------- camp button ----------
  {const ad=CAMP_CATS.find(c=>c.k==='adv');if(ad&&!ad.ids.includes('bArena'))ad.ids.splice(Math.max(0,ad.ids.indexOf('bTower')+1),0,'bArena');}
- const _rcAr=renderCamp;renderCamp=function(){const r=_rcAr.apply(this,arguments);try{if(hero&&!$('#bArena')){const t=$('#bTower')||$('#bDaily');if(t){t.insertAdjacentHTML('afterend','<button class="btn" id="bArena">⚔️ Arena</button>');$('#bArena').onclick=()=>hub();}}}catch(e){}return r;};
+ const _rcAr=renderCamp;renderCamp=function(){const r=_rcAr.apply(this,arguments);try{if(hero&&!$('#bArena')){const t=$('#bTower')||$('#bDaily');if(t){t.insertAdjacentHTML('afterend','<button class="btn" id="bArena">⚔️ Arena</button>');$('#bArena').onclick=async()=>{try{if(typeof cfgRefresh==='function')await withTimeout(cfgRefresh(),4000);}catch(e){}hub();};}}}catch(e){}return r;};
  if(typeof ES==='object')Object.assign(ES,{'⚔️ Arena':'⚔️ Arena','⚔️ Daily Arena':'⚔️ Arena diaria','⚔️ Find a match':'⚔️ Buscar rival','🏆 Today\'s rankings':'🏆 Clasificación de hoy','🏆 Victory!':'🏆 ¡Victoria!','Good fight!':'¡Buena pelea!','⚔️ Battle again':'⚔️ Pelear otra vez','🏆 Rankings':'🏆 Clasificación','Done':'Listo','Back':'Volver','Cancel':'Cancelar'});
 })();
 
@@ -7477,6 +7493,21 @@ try{Object.assign(ES,{"🛡️ Gear":"🛡️ Equipo","🎒 Bag":"🎒 Bolsa","�
 (function(){
  const _kc=kxCfg;kxCfg=function(){const c=_kc.apply(this,arguments);c.type=false;return c;};
  const _ko=kxOptsHTML;kxOptsHTML=function(){return _ko.apply(this,arguments).replace(/<label class="radio"><input type="checkbox" data-kxo="type"[^>]*> ✍️ Type It \(typed answer\)<\/label>/,'');};
+})();
+
+// ===================== V47: Arena teacher controls (on / off / set times) + name filter & hide =====================
+(function(){
+ const _ko=kxOptsHTML;kxOptsHTML=function(){const a=Object.assign({mode:'on',from:'14:30',to:'15:20',wk:true},settings.arena||{});
+  return _ko.apply(this,arguments)+`<div class="dbCard" id="arOpts"><h4>⚔️ Daily Arena</h4><p class="mini" style="margin:0 0 6px">Choose when students can battle in the Arena. Changes are sent to students who joined with your class codes. Teachers signed in with Google can always open it.</p>
+  <div class="row wrap" style="gap:10px;align-items:center"><label>Arena: <select id="arMode"><option value="on" ${a.mode==='on'?'selected':''}>Always open</option><option value="times" ${a.mode==='times'?'selected':''}>Only during set times</option><option value="off" ${a.mode==='off'?'selected':''}>Off</option></select></label>
+  <span id="arTimes" ${a.mode==='times'?'':'hidden'}>from <input type="time" id="arFrom" value="${a.from}"> to <input type="time" id="arTo" value="${a.to}"> <label class="radio"><input type="checkbox" id="arWk" ${a.wk?'checked':''}> School days only</label></span></div>
+  <div class="row wrap" style="gap:8px;margin-top:8px"><button class="btn sm" id="arRanksT">🏆 Today's rankings · hide a name</button></div>
+  <p class="mini" style="margin:6px 0 0">Hero names with bad words are replaced automatically. Use 🚫 Hide name in the rankings to rename any other hero for everyone at your school.</p><span class="mini" id="arMsgT"></span></div>`;};
+ const _kb=bindKxOpts;bindKxOpts=function(){_kb.apply(this,arguments);const m=$('#arMode');if(!m)return;
+  const save=()=>{const a={mode:m.value,from:$('#arFrom').value||'14:30',to:$('#arTo').value||'15:20',wk:$('#arWk').checked};$('#arTimes').hidden=a.mode!=='times';settings.arena=a;store.set(SET_KEY,settings);const g=$('#arMsgT');if(g)g.textContent='✔ Saved on this device';
+   const cls=settings.classes||[];if(cls.length&&typeof classUpdate==='function'&&CDB)Promise.all(cls.map(x=>classUpdate(x.code,{arena:Object.assign({},a)}).catch(()=>false))).then(r=>{if(g)g.textContent=r.some(Boolean)?'✔ Saved and sent to your class codes':'✔ Saved on this device';});};
+  [m,$('#arFrom'),$('#arTo'),$('#arWk')].forEach(el=>{if(el)el.onchange=save;});
+  const rb=$('#arRanksT');if(rb)rb.onclick=()=>{try{saveHub(true);}catch(e){}HTQ_ARENA.ranks(hero?HTQ_ARENA.brOf(hero.level):0);};};
 })();
 
 renderTitle();show('title');requestAnimationFrame(render);
