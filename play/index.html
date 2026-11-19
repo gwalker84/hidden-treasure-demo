@@ -8970,6 +8970,59 @@ openCabin=function(){if(!hero)return;
   cv.onpointermove=e=>{if(!drag)return;const[x,y]=pt(e);place(drag,x,y);drawCabin(cv);};
   cv.onpointerup=()=>{if(!drag)return;drag=null;CAB_UI.sel=null;cv.style.cursor='grab';saveHero();drawCabin(cv);};}};
 
+// ==================== V61: VISIT CLASSMATES' HOUSES + SOLO RAID MODE ====================
+// ---- share a small snapshot of your house on the class board ----
+function houseSnap(h){h=h||hero;const c=h&&h.cabin;if(!c)return null;const ok=id=>!!FBY[id];
+ const it=(c.items||[]).filter(id=>ok(id)&&!(c.hid||[]).includes(id)).slice(0,60),p={};
+ it.forEach(id=>{const q=(c.pos||{})[id];if(q)p[id]=[Math.round(q[0]*1000)/1000,Math.round(q[1]*1000)/1000];});
+ const o={h:c.house||'cabin',it,p,cl:(h.cleared||[]).slice(0,20),rd:Object.keys(h.raids||{}).slice(0,12),pet:h.pet||'',lk:h.look||null};
+ ['wall','floor','view','light'].forEach(k=>{if(c[k])o[k]=String(c[k]).slice(0,20);});return o;}
+cloudBoard=async function(){if(!CDB||!CUSR||!hero||!hero.classCode)return false;try{const uid=await CUSR.id();if(!uid)return false;const cfg=classCfg()||{},ref=CDB.doc('board/'+uid),snap=await withTimeout(ref.get());
+ const body=snap.exists?JSON.parse(JSON.stringify(snap.data())):{heroes:{}};body.heroes=body.heroes||{};const w=weekOf(hero);
+ body.heroes[hero.id]={code:hero.classCode,name:hero.name,student:cfg.names==='hero'?'':(hero.studentName||''),cls:hero.cls,lv:hero.level,wk:w.k,wc:w.c,wt:w.t,ws:w.best,ac:hero.stats.correct,at:hero.stats.total,best:hero.stats.best,wb:hero.wb||null,hs:houseSnap(hero),gv:(hero.houseStars||[]).slice(-40),u:Date.now()};
+ const ks=Object.keys(body.heroes).sort((a,b)=>(body.heroes[b].u||0)-(body.heroes[a].u||0));ks.slice(8).forEach(k=>delete body.heroes[k]);await withTimeout(ref.set(body));return true;}catch(e){return false;}};
+// turn a board row into a safe, read-only "visitor" hero
+function visitHero(r){const s=r.hs||{},clean=v=>typeof v==='string'?v.replace(/[^a-z0-9]/gi,'').slice(0,20):'';
+ const it=(Array.isArray(s.it)?s.it:[]).map(clean).filter(id=>FBY[id]).slice(0,60),pos={};
+ it.forEach(id=>{const q=s.p&&s.p[id];if(Array.isArray(q)&&q.length===2&&isFinite(q[0])&&isFinite(q[1]))pos[id]=[Math.max(.02,Math.min(.98,+q[0])),Math.max(.12,Math.min(.99,+q[1]))];});
+ const cab={items:it,house:HBY[clean(s.h)]?clean(s.h):'cabin',pos,hid:[],styles:[],built:[]};
+ ['wall','floor','view','light'].forEach(k=>{const v=clean(s[k]);if(v&&CAB_STYLES[k].some(x=>x[0]===v))cab[k]=v;});
+ const cls=CLASSES[r.cls]?r.cls:'warrior',pet=clean(s.pet);let look=null;if(s.lk&&typeof s.lk==='object'&&!Array.isArray(s.lk)){look={};Object.entries(s.lk).slice(0,12).forEach(([k,v])=>{if(/^[a-zA-Z]{1,12}$/.test(k)&&(typeof v==='boolean'||(typeof v==='string'&&v.length<=24)||(typeof v==='number'&&isFinite(v))))look[k]=v;});try{heroKey(cls,look);}catch(e){look=null;}}
+ return{cls,look,pet:ALLPETS.some(x=>x.id===pet)?pet:'',cabin:cab,cleared:(Array.isArray(s.cl)?s.cl:[]).filter(d=>Number.isInteger(d)&&d>=1&&d<=20),raids:Object.fromEntries((Array.isArray(s.rd)?s.rd:[]).filter(id=>RAIDS.some(R=>R.id===id)).map(id=>[id,1])),name:wCut(r.name||'Hero',24)};}
+function drawVisit(cv,vh){const me=hero,sel=CAB_UI.sel;hero=vh;CAB_UI.sel=null;try{drawCabin(cv);}catch(e){}finally{hero=me;CAB_UI.sel=sel;}}
+const starsFor=(rows,hid)=>rows.filter(r=>r.hid!==hid&&Array.isArray(r.gv)&&r.gv.includes(hid)).length;
+const VISIT={rows:null,busy:false,err:''};
+async function visitLoad(){if(VISIT.busy)return;VISIT.busy=true;VISIT.err='';try{await cloudBoard();const rows=await boardFetch(hero.classCode,true);VISIT.rows=rows||[];if(!rows)VISIT.err='Could not reach your class right now. Try again in a minute.';}catch(e){VISIT.err='Could not reach your class right now.';}VISIT.busy=false;if(modalOpen&&CAB_UI.tab==='visit')openCabin();}
+function visitListHTML(){if(!hero.classCode||!CDB)return'<p>🏘️ Join a class (with your teacher’s class code) to visit your classmates’ houses and give them stars!</p>';
+ if(!VISIT.rows){if(!VISIT.busy)setTimeout(visitLoad,0);return'<p class="mini">🏘️ Knocking on doors…</p>';}
+ const all=rowsWithMe(VISIT.rows.slice()).map(r=>r.me?Object.assign({},r,{hs:houseSnap(hero),gv:(hero.houseStars||[]).slice()}):r);
+ const list=all.filter(r=>r.hs&&r.code===hero.classCode).map(r=>({r,st:starsFor(all,r.hid)})).sort((a,b)=>b.st-a.st||(b.r.lv||0)-(a.r.lv||0));
+ const mine=hero.houseStars||[];
+ return`<p>Tour your classmates’ houses! Give a ⭐ to the ones you like — you get one star to give each house.</p>${VISIT.err?`<p class="bad">${VISIT.err}</p>`:''}
+ <div class="wgrid">${list.map(({r,st},i)=>{const H=HBY[(r.hs||{}).h]||HBY.cabin,me=r.hid===hero.id,on=mine.includes(r.hid);return`<div class="witem${me?' on':''}" style="cursor:default"><div style="font-size:28px">${H.i}</div><div class="iinfo"><b>${i<3&&st?['🥇','🥈','🥉'][i]+' ':''}${esc(r.student||r.name||'Hero')}${me?' (you)':''}</b><div class="mini">${esc(H.n)} · ⭐ ${st}</div></div><button class="btn sm" data-visit="${esc(r.hid)}">🚪 Visit</button>${me?'':`<button class="btn sm${on?' gold':''}" data-star="${esc(r.hid)}">${on?'⭐ Starred':'☆ Star'}</button>`}</div>`;}).join('')||'<p class="mini">No houses yet! When classmates buy a house, it shows up here.</p>'}</div>
+ <div class="row"><button class="btn sm" id="vRefresh">🔄 Refresh</button></div><p class="mini">Houses update when a classmate plays. Custom house names stay private.</p>`;}
+function openVisit(hid){const r=hid===hero.id?Object.assign(myRow(),{hs:houseSnap(hero)}):(VISIT.rows||[]).find(x=>x.hid===hid);if(!r||!r.hs){openCabin();return;}const vh=visitHero(r),H=HBY[vh.cabin.house]||HBY.cabin,all=rowsWithMe((VISIT.rows||[]).slice()).map(x=>x.me?Object.assign({},x,{gv:(hero.houseStars||[]).slice()}):x),st=starsFor(all,hid),on=(hero.houseStars||[]).includes(hid);
+ openModal(`<h2 class="px gold">${H.i} ${esc(r.student||r.name||'Hero')}’s ${esc(H.n)}</h2><canvas id="visCv" width="${H.W}" height="${H.H}" style="width:100%;border-radius:12px;border:3px solid #4a3020;display:block"></canvas>
+ <div class="statrow"><span>⭐ ${st} star${st===1?'':'s'}</span><span>🪑 ${vh.cabin.items.length} decorations</span><span>🏆 ${vh.cleared.length}/20 bosses</span></div>
+ <div class="row">${r.hid===hero.id?'':`<button class="btn${on?' gold':''}" id="vStar">${on?'⭐ You starred this':'☆ Give a star'}</button>`}<button class="btn" id="vBack">◀ Back to houses</button></div>`);
+ const cv=$('#visCv');drawVisit(cv,vh);clearInterval(CAB_UI.anim);CAB_UI.anim=setInterval(()=>{if(!document.body.contains(cv)){clearInterval(CAB_UI.anim);return;}drawVisit(cv,vh);},120);
+ $('#vBack').onclick=()=>{CAB_UI.tab='visit';openCabin();};const sb=$('#vStar');if(sb)sb.onclick=()=>{toggleStar(hid);openVisit(hid);};}
+function toggleStar(hid){if(!hid||hid===hero.id)return;hero.houseStars=hero.houseStars||[];const i=hero.houseStars.indexOf(hid);if(i>=0)hero.houseStars.splice(i,1);else{hero.houseStars.push(hid);snd('coin');}hero.houseStars=hero.houseStars.slice(-40);saveHero();cloudBoard();}
+{const _oc=openCabin;openCabin=function(){if(!hero)return;const vt=CAB_UI.tab==='visit';if(vt)CAB_UI.tab='shop';_oc();if(!hero.cabin)return;
+ const row=document.querySelector('[data-ctab]')&&document.querySelector('[data-ctab]').parentElement;if(row&&!row.querySelector('[data-ctab="visit"]')){const b=document.createElement('button');b.className='btn sm'+(vt?' gold':'');b.dataset.ctab='visit';b.textContent='🏘️ Visit Classmates';b.onclick=()=>{CAB_UI.tab='visit';CAB_UI.sel=null;VISIT.rows=null;openCabin();};row.appendChild(b);}
+ if(!vt)return;CAB_UI.tab='visit';row.querySelectorAll('[data-ctab]').forEach(b=>b.classList.toggle('gold',b.dataset.ctab==='visit'));
+ let n=row.nextSibling;while(n){const nx=n.nextSibling;n.remove();n=nx;}const d=document.createElement('div');d.innerHTML=visitListHTML();row.parentElement.appendChild(d);
+ d.querySelectorAll('[data-visit]').forEach(b=>b.onclick=()=>openVisit(b.dataset.visit));d.querySelectorAll('[data-star]').forEach(b=>b.onclick=()=>{toggleStar(b.dataset.star);openCabin();});const rf=$('#vRefresh');if(rf)rf.onclick=()=>{VISIT.rows=null;openCabin();};};}
+// ---- SOLO RAID MODE: weaker raid monsters for players on their own, but half the drop chances ----
+const SOLO_HP=.65,SOLO_ATK=.8;
+const soloOn=()=>!PARTY&&!!(hero&&hero.soloRaid);
+{const _erS=enterRaid;enterRaid=function(i){_erS(i);if(!soloOn()||!D||!D.raid)return;D.soloEasy=true;(D.enemies||[]).forEach(e=>{e.maxHp=Math.max(1,Math.round(e.maxHp*SOLO_HP));e.hp=Math.min(e.hp,e.maxHp);if(e.atk)e.atk=Math.max(1,Math.round(e.atk*SOLO_ATK));});msg('🛡️ Solo Mode: raid monsters have less HP and hit softer — but rare drops are half as likely.','#9fd8ff');};}
+{const _dd=decorDrop;decorDrop=function(h,raid,forceR){if(!forceR&&D&&D.soloEasy&&Math.random()<.5)return null;return _dd(h,raid,forceR);};}
+{const _rhd=raidHouseDrop;raidHouseDrop=function(h,rid){if(D&&D.soloEasy&&Math.random()<.5)return[];return _rhd(h,rid);};}
+{const _rc=raidCardsHTML;raidCardsHTML=function(canEnter,lockMsg){const h=_rc(canEnter,lockMsg);if(PARTY||!canEnter||!hero)return h;const on=!!hero.soloRaid;
+ return`<div class="witem${on?' on':''}" style="cursor:default;margin:6px 0"><div style="font-size:28px">🛡️</div><div class="iinfo"><b>Solo Mode: ${on?'ON':'OFF'}</b><div class="mini">For heroes raiding alone. Raid monsters get 35% less HP and hit 20% softer, but boss decor, house deeds, and raid materials drop half as often.</div></div><button class="btn sm${on?' gold':''}" id="soloTg">${on?'Turn off':'Turn on'}</button></div>`+h;};}
+{const _br=bindRaidCards;bindRaidCards=function(){_br();const b=$('#soloTg');if(b)b.onclick=()=>{hero.soloRaid=!hero.soloRaid;saveHero();openRaids();};};}
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
