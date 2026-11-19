@@ -7515,6 +7515,12 @@ const STD_INFO={"5.PS1": "Matter is made of particles too small to see; measure,
 function stdInfo(code){if(!code)return'';code=String(code).trim();if(STD_INFO[code])return STD_INFO[code];
  const parts=code.split(/\s*(?:,|\/|–|-(?=[0-9A-Z]+\.))\s*/).filter(Boolean);const seen=[];parts.forEach(p=>{const hit=Object.keys(STD_INFO).find(k=>k===p||k.split(/\s*(?:,|\/|–)\s*/).includes(p));if(hit&&!seen.includes(STD_INFO[hit]))seen.push(STD_INFO[hit]);});return seen.join(' ');}
 
+// ===================== V50: standards picker + Study Hall split Science / ELA / Math =====================
+{const fs=q=>(q.subj==='ela'||q.subj==='math')?q.subj:subjOfQ(q);
+stdCodes=function(){const out={sci:new Set(),ela:new Set(),math:new Set(),hist:new Set(),oaap:new Set()};ALLQ().forEach(q=>{const c=stdOfQ(q);if(c)out[fs(q)].add(c);});const srt=s=>[...s].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));const r={};Object.keys(out).forEach(k=>r[k]=srt(out[k]));return r;};
+const _pfc=poolForCodes;poolForCodes=function(codes,subj){if(subj!=='ela'&&subj!=='math')return _pfc(codes,subj);const hid=hiddenQ(),set=new Set(codes);return ALLQ().filter(q=>!hid.has(q.id)&&q.subj===subj&&set.has(stdOfQ(q)));};
+stdPickerHTML=function(name){const S=stdCodes();return Object.entries({sci:'🔬 Science',ela:'📝 ELA (Reading & Language)',math:'➗ Math',hist:'📜 History & Geography',oaap:'🧩 OAAP Science'}).filter(([k])=>S[k]&&S[k].length).map(([k,l])=>{const ds=(k==='ela'||k==='math')?'sci':k;return`<details class="jr"><summary><b>${l}</b> <span class="mini">(${S[k].length} standards)</span></summary><div class="row wrap">${S[k].map(c=>`<label class="radio sm" title="${esc(stdInfo(c))}"><input type="checkbox" class="${name}" value="${esc(c)}" data-s="${ds}"> ${esc(c)} <span class="mini">(${poolForCodes([c],k).length})</span>${stdInfo(c)?`<span class="mini" style="display:block;margin-left:24px;white-space:normal">${esc(stdInfo(c))}</span>`:''}</label>`).join('')}</div></details>`;}).join('');};}
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
