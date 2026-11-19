@@ -7801,6 +7801,13 @@ async function csumLoad(){if(!CDB||CSUMbusy)return false;CSUMbusy=true;let ok=fa
  const n=(CSUM||[]).length,t=CSUMt?new Date(CSUMt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';return (CDB?`<div class="row" style="align-items:center;margin-bottom:6px"><span class="mini">📡 ${CSUMt?`${n} student${n===1?'':'s'} synced from class codes · updated ${t}`:'Loading class results…'}</span><button class="btn sm" id="csumRe">🔄 Refresh</button></div>`:'')+h;};}
 {const _otC=openTeacher;openTeacher=function(){_otC.apply(this,arguments);try{const re=document.getElementById('csumRe');if(re)re.onclick=()=>{re.disabled=true;re.textContent='Loading…';CSUMt=0;csumLoad().then(()=>{if(document.querySelector('#modalBody [data-tab]'))openTeacher();});};
  if(CDB&&!CSUMbusy&&Date.now()-CSUMt>60000&&document.querySelector('#modalBody [data-tab]'))csumLoad().then(ok=>{if(ok&&['a','r'].includes(typeof hubTab!=='undefined'?hubTab:'')&&document.querySelector('#modalBody [data-tab]'))openTeacher();});}catch(e){}};}
+// ===================== V54: correct science standard codes (old codes in saved assignments still work) =====================
+{const REN={'7.LS3':'8.LS3.1–8.LS3.2','7.ESS1':'8.ESS1.1–8.ESS1.3','7.ESS2':'6.ESS2.1–6.ESS2.3','7.PS1.2 / 8.PS1.5':'7.PS1.2, 7.PS1.5','8.PS4.1–8.PS4.3':'8.PS4.1, 8.PS4.3','7.LS1':'7.LS1.6–7.LS1.7','7.LS2':'7.LS2.1–7.LS2.4','8.LS4':'8.LS4.1–8.LS4.6','5.PS1':'5.PS1.1–5.PS1.4','5.ESS1':'5.ESS1.1–5.ESS1.2','5.ESS2':'5.ESS2.1'};
+ Object.keys(STD_DEFAULT).forEach(k=>{const v=STD_DEFAULT[k];if(REN[v])STD_DEFAULT[k]=REN[v];});
+ Object.entries(REN).forEach(([o,n])=>{if(STD_INFO[o]&&!STD_INFO[n])STD_INFO[n]=STD_INFO[o];});
+ const fixC=codes=>Array.isArray(codes)?codes.map(c=>REN[c]||c):codes;
+ const _amR=asgMatches;asgMatches=function(a,q){return _amR(a&&a.k?Object.assign({},a,{k:fixC(a.k)}):a,q);};
+ const _pcR=poolForCodes;poolForCodes=function(codes,subj){return _pcR(fixC(codes),subj);};}
 renderTitle();show('title');requestAnimationFrame(render);
 
 
