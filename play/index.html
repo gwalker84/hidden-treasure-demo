@@ -9023,6 +9023,19 @@ const soloOn=()=>!PARTY&&!!(hero&&hero.soloRaid);
  return`<div class="witem${on?' on':''}" style="cursor:default;margin:6px 0"><div style="font-size:28px">🛡️</div><div class="iinfo"><b>Solo Mode: ${on?'ON':'OFF'}</b><div class="mini">For heroes raiding alone. Raid monsters get 35% less HP and hit 20% softer, but boss decor, house deeds, and raid materials drop half as often.</div></div><button class="btn sm${on?' gold':''}" id="soloTg">${on?'Turn off':'Turn on'}</button></div>`+h;};}
 {const _br=bindRaidCards;bindRaidCards=function(){_br();const b=$('#soloTg');if(b)b.onclick=()=>{hero.soloRaid=!hero.soloRaid;saveHero();openRaids();};};}
 
+// ==================== V65: PICK TODAY'S SUBJECT RIGHT AFTER PICKING YOUR HERO ====================
+const dayKey=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();};
+let SJ_ASK=false;
+function askSubjectToday(){if(!hero||PARTY||SUBJ[settings.forceSubj])return;if(hero.subjDay===dayKey())return;let tries=0;
+ const go=()=>{if(!hero)return;const cut=document.getElementById('cutSkip');const busy=screen!=='camp'||modalOpen||(cut&&cut.offsetParent);if(busy){if(tries++<240)setTimeout(go,500);return;}if(hero.subjDay===dayKey())return;
+  hero.subjDay=dayKey();saveHero();openSubject();const h=document.querySelector('#modalBody h2');if(h)h.innerHTML='📚 What are you studying today?';
+  const p=document.querySelector('#modalBody p');if(p)p.insertAdjacentHTML('beforebegin',`<p><b>Hi, ${esc(hero.name)}!</b> Tap the subject for today’s class, then press <b>✔ Done</b>.</p>`);};
+ setTimeout(go,700);}
+{const _rtS=renderTitle;renderTitle=function(){_rtS.apply(this,arguments);document.querySelectorAll('#saves button[data-id]').forEach(b=>b.addEventListener('click',()=>{SJ_ASK=true;},true));};}
+{const _gcS=goCamp;goCamp=function(){_gcS.apply(this,arguments);if(SJ_ASK){SJ_ASK=false;askSubjectToday();}};}
+// brand-new heroes pick a subject too, right after their opening story
+{const _nhS=newHero;newHero=function(){_nhS.apply(this,arguments);SJ_ASK=false;askSubjectToday();};}
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
