@@ -9326,6 +9326,56 @@ srTabHTML=function(){
  document.querySelectorAll('.srG').forEach(c=>c.onchange=()=>{SR.grades=[...document.querySelectorAll('.srG:checked')].map(x=>x.value);re();});
  document.querySelectorAll('input[name=srGrp]').forEach(r=>r.onchange=()=>{SR.group=r.value==='1';re();});};}
 
+// ==================== V71: APPROVED TEACHER ACCOUNTS OPEN THE TEACHER HUB WITHOUT THE SHARED PASSWORD ====================
+(function(){
+ if(window.MWQ_NOFB||typeof firebase==='undefined'||!window.MWQ_AUTH)return;
+ const auth=window.MWQ_AUTH,fs=()=>firebase.firestore();
+ const ADM=['schoolhiddentreasuregame@gmail.com','gwalker@mcps.k12.ok.us'];
+ const prov=u=>{try{return(u.providerData&&u.providerData[0]&&u.providerData[0].providerId)||'';}catch(e){return'';}};
+ // TA.st: 'none' (no teacher account) · 'loading' · 'verify' (email not verified) · 'wait' (not approved yet) · 'off' · 'ok'
+ const TA={st:'none',uid:null};window.MWQ_TA=TA;
+ const isAdm=u=>!!(u&&!u.isAnonymous&&ADM.includes(String(u.email||'').toLowerCase()));
+ async function check(){const u=auth.currentUser;if(!u||u.isAnonymous){TA.st='none';TA.uid=null;return;}
+  if(isAdm(u)){TA.st='ok';TA.uid=u.uid;return;}
+  if(prov(u)==='password'&&!u.emailVerified){TA.st='verify';TA.uid=u.uid;return;}
+  TA.st='loading';TA.uid=u.uid;
+  for(let i=0;i<4;i++){try{const s=await fs().doc('teachers/'+u.uid).get();if(s.exists){const d=s.data()||{};TA.st=d.off===true?'off':d.ok===true?'ok':'wait';break;}TA.st='wait';}catch(e){TA.st='wait';}
+   await new Promise(r=>setTimeout(r,1500));}
+  // the Teacher Hub lock screen is open and this account is approved: go straight in
+  if(TA.st==='ok'&&modalOpen&&document.getElementById('tpIn')&&!settings.pin){TEACH_UNTIL=Date.now()+TEACH_MIN*60000;openTeacher();}
+  else if(modalOpen&&document.getElementById('taBox'))paintBox();}
+ auth.onAuthStateChanged(()=>{check();});
+ const _ot=openTeacher;openTeacher=function(){
+  if(!settings.pin&&!teachOpen()&&TA.st==='ok'&&auth.currentUser&&!auth.currentUser.isAnonymous)TEACH_UNTIL=Date.now()+TEACH_MIN*60000;
+  _ot();if(document.getElementById('tpIn')&&!settings.pin)addBox();};
+ // ---- teacher sign-in on the lock screen ----
+ function addBox(){const mb=document.getElementById('modalBody');if(!mb||document.getElementById('taBox'))return;
+  mb.insertAdjacentHTML('beforeend',`<div id="taBox" class="item" style="display:block;border-color:#ffcf4a;margin-top:10px"></div>`);paintBox();}
+ const say=(t,c)=>{const m=document.getElementById('taMsg');if(m){m.innerHTML=t;m.style.color=c==='err'?'#ff8a8a':c==='ok'?'#7cf09a':'';}};
+ const errText=e=>{const c=(e&&e.code)||'';return{'auth/invalid-email':'That email address doesn\'t look right.','auth/missing-password':'Type your password.','auth/weak-password':'Use a password with at least 8 characters.','auth/email-already-in-use':'That email already has an account. Click <b>Sign in</b> instead, or <b>Forgot password?</b>','auth/invalid-credential':'Wrong email or password. Try again, or click <b>Forgot password?</b>','auth/wrong-password':'Wrong email or password. Try again, or click <b>Forgot password?</b>','auth/user-not-found':'No account uses that email yet. Click <b>Create account</b>.','auth/too-many-requests':'Too many tries. Wait a few minutes, or click <b>Forgot password?</b>','auth/operation-not-allowed':'Email sign-in isn\'t turned on yet. Please email schoolhiddentreasuregame@gmail.com.','auth/user-disabled':'This teacher account was turned off. Please email schoolhiddentreasuregame@gmail.com.','auth/popup-blocked':'The browser blocked the Google window. Allow pop-ups for this site and try again.','auth/popup-closed-by-user':'The Google window was closed before sign-in finished.'}[c]||('Sign-in did not finish ('+esc(c||(e&&e.message)||'error')+').');};
+ function paintBox(){const b=document.getElementById('taBox');if(!b)return;const u=auth.currentUser,em=esc((u&&u.email)||'');
+  const out=`<button class="btn sm" id="taOut">Use a different account</button>`;
+  if(!u||u.isAnonymous){b.innerHTML=`<b>👩‍🏫 Or sign in with your teacher account</b><div class="mini">Approved teacher accounts open the Teacher Hub without the password. New accounts are approved by Hidden Treasure Quest (usually the same day).</div>
+   <div class="row wrap" style="gap:6px;margin-top:8px"><button class="btn sm gold" id="taG">Sign in with Google</button></div>
+   <div class="row wrap" style="gap:6px;margin-top:6px"><input type="email" id="taE" placeholder="you@school.org" autocomplete="username" style="max-width:230px"><input type="password" id="taP" placeholder="Password" autocomplete="current-password" style="max-width:170px">
+   <button class="btn sm gold" id="taIn">Sign in</button><button class="btn sm" id="taNew">Create account</button><button class="btn sm" id="taForgot">Forgot password?</button></div><div class="mini" id="taMsg" style="min-height:18px"></div>`;
+   const val=()=>({e:(document.getElementById('taE').value||'').trim(),p:document.getElementById('taP').value||''});
+   document.getElementById('taG').onclick=async()=>{try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());location.reload();}catch(x){say(errText(x),'err');}};
+   document.getElementById('taIn').onclick=async()=>{const{e,p}=val();if(!e||!p){say('Type your email and password.','err');return;}say('Signing in…');try{const c=await auth.signInWithEmailAndPassword(e,p);if(c.user&&!c.user.emailVerified){TA.st='verify';paintBox();return;}location.reload();}catch(x){say(errText(x),'err');}};
+   document.getElementById('taNew').onclick=async()=>{const{e,p}=val();if(!e){say('Type your school email first.','err');return;}if(p.length<8){say('Choose a password with at least 8 characters.','err');return;}say('Creating your account…');try{const c=await auth.createUserWithEmailAndPassword(e,p);try{await c.user.sendEmailVerification();}catch(x){}TA.st='verify';paintBox();}catch(x){say(errText(x),'err');}};
+   document.getElementById('taForgot').onclick=async()=>{const{e}=val();if(!e){say('Type your email in the box first, then click <b>Forgot password?</b>','err');return;}try{await auth.sendPasswordResetEmail(e);}catch(x){if(x&&x.code==='auth/invalid-email'){say(errText(x),'err');return;}}say('📨 If <b>'+esc(e)+'</b> has a teacher account, a password reset link is on its way. Check your inbox (and spam).','ok');};
+   const pw=document.getElementById('taP');if(pw)pw.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();document.getElementById('taIn').click();}});}
+  else if(TA.st==='verify'){b.innerHTML=`<b>📬 Check your email to finish your teacher account</b><div class="mini">We sent a link to <b>${em}</b>. Click it, then click <b>I clicked the link</b>. (Check spam too.)</div>
+   <div class="row wrap" style="gap:6px;margin-top:6px"><button class="btn sm gold" id="taDone">✔ I clicked the link</button><button class="btn sm" id="taRe">📨 Send it again</button>${out}</div><div class="mini" id="taMsg" style="min-height:18px"></div>`;
+   document.getElementById('taDone').onclick=async()=>{try{await u.reload();await u.getIdToken(true);}catch(e){}if(auth.currentUser&&auth.currentUser.emailVerified){say('✔ Verified!','ok');setTimeout(()=>location.reload(),500);}else say('Not verified yet. Open the email and click the link first.','err');};
+   document.getElementById('taRe').onclick=async()=>{try{await u.sendEmailVerification();say('📨 Sent again.','ok');}catch(x){say(x&&x.code==='auth/too-many-requests'?'Please wait a minute before sending again.':'Could not send the email.','err');}};}
+  else if(TA.st==='loading'){b.innerHTML=`<b>👩‍🏫 Signed in as ${em}</b><div class="mini">Checking your teacher account…</div>`;}
+  else if(TA.st==='off'){b.innerHTML=`<b>⛔ ${em}: this teacher account is turned off.</b><div class="mini">Use the Teacher Hub password, or email schoolhiddentreasuregame@gmail.com.</div><div class="row" style="margin-top:6px">${out}</div>`;}
+  else{b.innerHTML=`<b>⏳ ${em} is waiting for approval</b><div class="mini">Hidden Treasure Quest approves new teacher accounts, usually the same day. Until then, open the Teacher Hub with the password. Questions: schoolhiddentreasuregame@gmail.com</div><div class="row" style="margin-top:6px"><button class="btn sm" id="taAgain">🔄 Check again</button>${out}</div>`;
+   const a=document.getElementById('taAgain');if(a)a.onclick=()=>{TA.st='loading';paintBox();check();};}
+  const o=document.getElementById('taOut');if(o)o.onclick=async()=>{await auth.signOut();location.reload();};}
+})();
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
