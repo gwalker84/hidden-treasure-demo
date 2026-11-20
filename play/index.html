@@ -2203,7 +2203,7 @@ function openScroll(){const s=hero.stats,pct=s.total?Math.round(s.correct/s.tota
 let hubTab='d';
 function openTeacher(){if(settings.pin&&!openTeacher.ok){openModal(`<h2 class="px">🍎 Teacher Hub</h2><p>Enter the teacher PIN:</p><input type="text" id="pinIn" inputmode="numeric" autocomplete="off" style="max-width:200px"> <div class="row"><button class="btn gold" id="pinGo">Open</button></div><div id="pinErr" class="mini"></div>`);
   $('#pinGo').onclick=()=>{if($('#pinIn').value===settings.pin){openTeacher.ok=true;openTeacher();}else $('#pinErr').textContent='Wrong PIN.';};$('#pinIn').focus();return;}
- const tabs=[['d','🏫 Class Codes & Daily Scores'],['q','❓ Questions'],['w','🐲 World Boss & Leaderboard'],['r','📋 Progress Report'],['a','📋 Assign & Test'],['s','📏 Standards'],['n','👥 Who Is Online'],['k','👀 Watch'],['l','📡 Live Class'],['x','✍️ Student Questions'],['g','🎁 Rewards & Events'],['u','🤝 Student Supports'],['i','🎒 Inventories'],['v','📖 Vocab'],['o','🎛️ Options'],['c','🖥️ Classroom Mode']];
+ const tabs=[['d','🏫 Class Codes & Daily Scores'],['q','❓ Questions'],['w','🐲 World Boss & Leaderboard'],['r','📋 Progress Report'],['a','📋 Assign & Test'],['s','📏 Standards'],['n','👥 Who Is Online'],['k','👀 Watch'],['l','📡 Live Class'],['x','✍️ Student Questions'],['g','🎁 Rewards & Events'],['u','🤝 Student Supports'],['i','🎒 Inventories'],['v','📖 Vocab'],['o','🎛️ Options'],['c','🖥️ Classroom Mode'],...(typeof DEMO_D==='undefined'?[['p','📊 Standards Report']]:[])];
  let body='';
  if(hubTab==='q'){const cu=parseCustom(settings.custom),bc=bossPool(),pk=settings.packs||[];
   body=`<h3>Grade level</h3><div class="row wrap">${[['all','All grades 5–8'],['5','5th'],['6','6th'],['78','7th / 8th'],['1','1st'],['2','2nd'],['3','3rd'],['4','4th']].map(([v,l])=>`<label class="radio"><input type="radio" name="grade" value="${v}" ${settings.grade===v?'checked':''}> ${l}</label>`).join('')}</div>
@@ -2227,7 +2227,7 @@ function openTeacher(){if(settings.pin&&!openTeacher.ok){openModal(`<h2 class="p
  else if(hubTab==='i'){body=invTabHTML();}
  else if(hubTab==='k'){body=watchTabHTML();}
  else if(hubTab==='n'){body=whoTabHTML();}
- else if(hubTab==='v'){body=vocabTabHTML();}
+ else if(hubTab==='v'){body=vocabTabHTML();}else if(hubTab==='p'){body=srTabHTML();}
  else if(hubTab==='o'){body=`<h3>Sound & Story</h3><div class="row wrap"><label class="radio"><input type="checkbox" id="oSound" ${settings.sound?'checked':''}> Sound effects</label><label class="radio"><input type="checkbox" id="oMusic" ${settings.music?'checked':''}> Background music</label><label class="radio"><input type="checkbox" id="oCut" ${settings.cutscenes?'checked':''}> Story cutscenes</label></div>
   <h3>Reading support</h3><label class="radio"><input type="checkbox" id="oRead" ${settings.readAloud?'checked':''}> Read every question aloud automatically</label><p class="mini">Students can always tap 🔊 to hear a question. ${canSpeak()?'':'(This browser does not support read-aloud.)'}</p>
   <h3>Difficulty</h3><label class="radio"><input type="checkbox" id="oHard" ${settings.forceHard?'checked':''}> 💀 Hard Mode for every hero on this device</label><p class="mini">Harder questions and tougher monsters, with bigger rewards. When this is off, each student can turn Hard Mode on or off at camp.</p>
@@ -2239,7 +2239,7 @@ function openTeacher(){if(settings.pin&&!openTeacher.ok){openModal(`<h2 class="p
  openModal(`<h2 class="px">🍎 Teacher Hub</h2><div class="tabs">${tabs.map(([k,l])=>`<button class="tab${hubTab===k?' on':''}" data-tab="${k}">${l}</button>`).join('')}</div><div class="hubbody">${body}</div>${hubTab==='q'||hubTab==='o'?'<div class="row"><button class="btn gold" id="tSave">💾 Save Settings</button><span class="mini" id="tSaved"></span></div>':''}`);
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{saveHub(true);hubTab=b.dataset.tab;openTeacher();});
  if(hubTab==='q'){bindQsets();$('#tCustom').oninput=()=>$('#tCount').textContent=parseCustom($('#tCustom').value).length+' custom question(s) found.';$('#tBoss').oninput=()=>$('#tBCount').textContent=parseCustom($('#tBoss').value).length+' boss question(s) found.';$('#pkNone').onclick=()=>document.querySelectorAll('.pk').forEach(c=>c.checked=false);}
- if(hubTab==='s')bindStd();if(hubTab==='a')bindAsg();if(hubTab==='l')bindLive();if(hubTab==='x')bindSQ();if(hubTab==='g')bindRW();if(hubTab==='u')bindAcc();if(hubTab==='i')bindInv();if(hubTab==='k')bindWatch();if(hubTab==='n')bindWho();if(hubTab==='v')bindVocab();if(hubTab==='r')bindReport();if(hubTab==='d')bindDaily();if(hubTab==='w')bindWorld();if(hubTab==='c')bindClassSetup();
+ if(hubTab==='s')bindStd();if(hubTab==='a')bindAsg();if(hubTab==='l')bindLive();if(hubTab==='x')bindSQ();if(hubTab==='g')bindRW();if(hubTab==='u')bindAcc();if(hubTab==='i')bindInv();if(hubTab==='k')bindWatch();if(hubTab==='n')bindWho();if(hubTab==='v')bindVocab();if(hubTab==='p')bindSR();if(hubTab==='r')bindReport();if(hubTab==='d')bindDaily();if(hubTab==='w')bindWorld();if(hubTab==='c')bindClassSetup();
  const sv=$('#tSave');if(sv)sv.onclick=()=>{saveHub();$('#tSaved').textContent='✔ Saved!';};}
 function saveHub(quiet){const g=document.querySelector('input[name=grade]:checked');if(g)settings.grade=g.value;
  if($('#tCustom')){settings.custom=$('#tCustom').value;settings.customOnly=$('#tOnly').checked;settings.bossCustom=$('#tBoss').value;settings.packs=[...document.querySelectorAll('.pk:checked')].map(c=>c.value);}
@@ -9139,6 +9139,120 @@ libCard=function(p){const r=libOf()[p.k[0]],code=stdOf(p.k[0])||'';return`<butto
  d.style.cssText='background:#fff7df;border:2px solid #c9a24a;border-radius:10px;padding:7px 10px;margin:6px 0 8px;color:#3b2a0a';
  d.innerHTML=`<div style="font-weight:900">📏 Oklahoma Academic Standard: <span style="color:#7a1f1f">${esc(code)}</span></div>${info?`<div style="font-size:.92em;margin-top:2px">${esc(info)}</div>`:''}<div class="mini" style="color:#6b5530;margin-top:2px">${esc(SUBJ[libSubj(p)].n)} · ${esc(gradeLbl(libGrade(p)))} · Topic: ${esc(p.t)}</div>`;
  h.after(d);}catch(e){}};}
+
+// ==================== V69: TEACHER EMAIL LOGINS · TEACHER ACCOUNT RECORDS · STANDARDS-BY-STUDENT REPORT ====================
+// ---- 1) daily scores now also remember grade+subject+topic (so every answer maps to an exact standard) ----
+var __RQ=null;
+{const _r=record;record=function(ok){__RQ=(typeof Cb!=='undefined'&&Cb&&Cb.q)||null;try{return _r.apply(this,arguments);}finally{__RQ=null;}};}
+{const _rq=recordQ;recordQ=function(q,ok){__RQ=q||null;try{return _rq.apply(this,arguments);}finally{__RQ=null;}};}
+{const _tr=todayRecord;todayRecord=function(ok,topic){_tr(ok,topic);try{const k=gtKey(__RQ);if(!k)return;const d=ensureToday();d.gt=d.gt||{};const v=d.gt[k]=d.gt[k]||[0,0];v[1]++;if(ok)v[0]++;}catch(e){}};}
+{const _ts=todaySummary;todaySummary=function(){const o=_ts();try{const d=ensureToday();if(d.gt)o.gt=d.gt;}catch(e){}return o;};}
+
+// ---- 2) Standards report (Teacher Hub tab "📊 Standards Report") ----
+const SR={range:'30',from:'',to:'',cls:'all',subj:'all',busy:false,msg:''};
+const srNum=s=>{const p=String(s||'').split('-').map(Number);return p.length===3?p[0]*10000+p[1]*100+p[2]:0;};
+const srIso=n=>n?`${Math.floor(n/10000)}-${String(Math.floor(n/100)%100).padStart(2,'0')}-${String(n%100).padStart(2,'0')}`:'';
+const srDays=d=>{const x=new Date();x.setHours(0,0,0,0);x.setDate(x.getDate()-d);return x.getFullYear()*10000+(x.getMonth()+1)*100+x.getDate();};
+const SR_SUBJ={s:'🔬 Science',k:'🔬 Science',h:'📜 Social Studies',e:'📝 ELA',m:'➗ Math'};
+const srSubjOf=k=>({k:'s'}[k[0]]||k[0]);
+let SR_T2K=null;
+function srTopicKeys(t){if(!SR_T2K){SR_T2K={};GT_LIST.forEach(k=>{const tp=k.split('|')[1];(SR_T2K[tp]=SR_T2K[tp]||[]).push(k);});}return SR_T2K[t]||[];}
+function srRange(){if(SR.range==='all')return[0,99999999];if(SR.range==='custom'){const a=srNum(SR.from)||0,b=srNum(SR.to)||99999999;return[Math.min(a,b),Math.max(a,b)];}const n=+SR.range||30;return[srDays(n-1),99999999];}
+function srRows(){return(typeof dsCloud!=='undefined'&&dsCloud||[]).concat(typeof parseDaily==='function'?parseDaily(typeof dsPaste!=='undefined'?dsPaste:''):[]);}
+function srBuild(){const[lo,hi]=srRange(),studs={},cols={};let skipped=0,days=new Set();
+ srRows().forEach(r=>{const dn=srNum(r.date);if(!dn||dn<lo||dn>hi)return;if(SR.cls!=='all'&&r.code!==SR.cls)return;
+  const sk=(r.student||r.hero||'?')+'|'+(r.code||'');const st=studs[sk]=studs[sk]||{name:r.student||r.hero||'?',hero:r.hero||'',code:r.code||'',by:{},c:0,t:0,days:new Set()};
+  st.days.add(dn);days.add(dn);
+  let gt=r.gt;if(!gt){gt={};Object.entries(r.tp||{}).forEach(([t,v])=>{const ks=srTopicKeys(t);if(ks.length===1){const a=gt[ks[0]]=gt[ks[0]]||[0,0];a[0]+=v[0];a[1]+=v[1];}else skipped+=(v&&v[1])||0;});}
+  Object.entries(gt).forEach(([k,v])=>{if(!v||!v[1])return;const sj=srSubjOf(k);if(SR.subj!=='all'&&sj!==SR.subj)return;const codes=stdSplit(stdOf(k));if(!codes.length){skipped+=v[1];return;}
+   codes.forEach(code=>{const ck=sj+'|'+code;cols[ck]=cols[ck]||{code,sj,c:0,t:0,topics:new Set()};cols[ck].c+=v[0];cols[ck].t+=v[1];cols[ck].topics.add(k.split('|')[1]);
+    const b=st.by[ck]=st.by[ck]||[0,0];b[0]+=v[0];b[1]+=v[1];});st.c+=v[0];st.t+=v[1];});});
+ const order='shem';const C=Object.entries(cols).sort((a,b)=>order.indexOf(a[1].sj)-order.indexOf(b[1].sj)||a[1].code.localeCompare(b[1].code,undefined,{numeric:true}));
+ const S=Object.values(studs).filter(s=>s.t>0).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+ return{C,S,skipped,days:days.size};}
+function srCell(v,title){if(!v||!v[1])return`<td class="mini" style="text-align:center;color:#6d6380">·</td>`;const p=Math.round(v[0]/v[1]*100),few=v[1]<3;
+ return`<td title="${esc(title)}" style="text-align:center;background:${pctCol(p)}${few?'33':'55'};color:#fff;font-weight:800${few?';opacity:.75':''}">${p}%<span class="mini" style="color:#e8e0f4"> ${v[1]}</span></td>`;}
+function srTabHTML(){
+ const signed=(()=>{try{const u=window.MWQ_AUTH&&window.MWQ_AUTH.currentUser;return!!(u&&!u.isAnonymous);}catch(e){return false;}})();
+ const classes=[...new Set(srRows().map(r=>r.code).filter(Boolean))].sort();
+ const lbl=c=>{const x=(settings.classes||[]).find(k=>k.code===c);return x?x.label+' ('+c+')':c;};
+ const R=srBuild();
+ const head=`<p class="mini">Each student's percent correct on every Oklahoma standard they practiced, from the daily scores the game sends automatically. <b style="color:#46c46a">Green</b> 80%+ · <b style="color:#e0b02c">Yellow</b> 60–79% · <b style="color:#e5484d">Red</b> under 60%. The small number is how many questions were answered; faded cells have fewer than 3, so treat them as a first look.</p>
+ <div class="row wrap" style="gap:8px;align-items:flex-end">
+  <label class="radio sm">Dates <select id="srRange">${[['7','Last 7 days'],['14','Last 2 weeks'],['30','Last 30 days'],['63','Last 9 weeks'],['all','All time'],['custom','Pick dates…']].map(([v,l])=>`<option value="${v}" ${SR.range===v?'selected':''}>${l}</option>`).join('')}</select></label>
+  ${SR.range==='custom'?`<label class="radio sm">From <input type="date" id="srFrom" value="${esc(SR.from)}" style="max-width:160px"></label><label class="radio sm">To <input type="date" id="srTo" value="${esc(SR.to)}" style="max-width:160px"></label>`:''}
+  <label class="radio sm">Class <select id="srCls"><option value="all">All classes</option>${classes.map(c=>`<option value="${esc(c)}" ${SR.cls===c?'selected':''}>${esc(lbl(c))}</option>`).join('')}</select></label>
+  <label class="radio sm">Subject <select id="srSubj">${[['all','All subjects'],['s','🔬 Science'],['h','📜 Social Studies'],['e','📝 ELA'],['m','➗ Math']].map(([v,l])=>`<option value="${v}" ${SR.subj===v?'selected':''}>${l}</option>`).join('')}</select></label>
+  <button class="btn sm gold" id="srLoad">${SR.busy?'Loading…':(typeof dsCloud!=='undefined'&&dsCloud?'🔄 Refresh':'☁️ Load scores')}</button>
+ </div><div class="mini" id="srMsg">${esc(SR.msg)}</div>`;
+ if(!R.S.length){const why=!(typeof dsCloud!=='undefined'&&dsCloud)?(signed?'Click <b>☁️ Load scores</b> to pull in your students\' daily scores.':'Sign in at the top of the Teacher Hub, then click <b>☁️ Load scores</b>.'):'No answers in these dates for this class and subject. Try a wider date range.';
+  return head+`<div class="item" style="display:block"><p>${why}</p><p class="mini">Students send scores automatically once they join one of your class codes (🏫 Class Codes & Daily Scores tab).</p></div>`;}
+ const colsHTML=R.C.map(([ck,c])=>`<th title="${esc(c.code+' — '+(stdInfo(c.code)||'')+' (topics: '+[...c.topics].join(', ')+')')}" style="text-align:center">${SR_SUBJ[c.sj]?SR_SUBJ[c.sj].split(' ')[0]:''}<br>${esc(c.code)}</th>`).join('');
+ const body=R.S.map(s=>{const p=s.t?Math.round(s.c/s.t*100):0;
+  const weak=R.C.filter(([ck])=>{const v=s.by[ck];return v&&v[1]>=3&&v[0]/v[1]<.6;}).sort((a,b)=>{const va=s.by[a[0]],vb=s.by[b[0]];return va[0]/va[1]-vb[0]/vb[1];}).slice(0,4).map(([ck,c])=>c.code);
+  return`<tr><td style="position:sticky;left:0;background:#1b1724;z-index:1"><b>${esc(s.name)}</b>${s.hero&&s.hero!==s.name?`<div class="mini">${esc(s.hero)}</div>`:''}<div class="mini">${s.code?esc(s.code)+' · ':''}${s.days.size} day${s.days.size===1?'':'s'}</div></td>
+   <td style="text-align:center;color:${pctCol(p)};font-weight:900">${p}%<div class="mini">${s.t} answered</div></td>
+   <td class="mini" style="white-space:normal;min-width:120px">${weak.length?weak.map(esc).join(', '):'<span style="color:#46c46a">—</span>'}</td>
+   ${R.C.map(([ck,c])=>srCell(s.by[ck],`${s.name}: ${c.code} — ${s.by[ck]?s.by[ck][0]+' of '+s.by[ck][1]+' correct':'not practiced'}${stdInfo(c.code)?'. '+stdInfo(c.code):''}`)).join('')}</tr>`;}).join('');
+ const tc=R.S.reduce((a,s)=>a+s.c,0),tt=R.S.reduce((a,s)=>a+s.t,0),tp=tt?Math.round(tc/tt*100):0;
+ const foot=`<tr style="border-top:2px solid var(--gold)"><td style="position:sticky;left:0;background:#241f30;z-index:1"><b>Whole class</b><div class="mini">${R.S.length} student${R.S.length===1?'':'s'}</div></td><td style="text-align:center;color:${pctCol(tp)};font-weight:900">${tp}%<div class="mini">${tt} answered</div></td>
+  <td class="mini" style="white-space:normal">${R.C.filter(([ck,c])=>c.t>=5&&c.c/c.t<.6).sort((a,b)=>a[1].c/a[1].t-b[1].c/b[1].t).slice(0,4).map(([ck,c])=>esc(c.code)).join(', ')||'—'}</td>
+  ${R.C.map(([ck,c])=>srCell([c.c,c.t],`Whole class: ${c.code} — ${c.c} of ${c.t} correct`)).join('')}</tr>`;
+ const lo=srRange();
+ return head+`<p class="mini">${R.S.length} student${R.S.length===1?'':'s'} · ${R.C.length} standard${R.C.length===1?'':'s'} · ${R.days} school day${R.days===1?'':'s'} of scores${SR.range!=='all'?` · ${esc(fmtYmd(lo[0]))}${lo[1]<99999999?' – '+esc(fmtYmd(lo[1])):' – today'}`:''}. Hover over a cell or code to see the details.</p>
+ <div class="tscroll" style="max-height:520px"><table class="rtab"><tr><th style="position:sticky;left:0;z-index:2">Student</th><th>Overall</th><th>Needs work<br><span class="mini">(under 60%)</span></th>${colsHTML}</tr>${body}${foot}</table></div>
+ ${R.skipped?`<p class="mini">${R.skipped} older answer${R.skipped===1?'':'s'} couldn't be matched to one exact standard, because scores sent before this update only saved the topic name. New scores always match.</p>`:''}`;}
+function bindSR(){const re=()=>openTeacher();
+ const g=id=>document.getElementById(id);
+ if(g('srRange'))g('srRange').onchange=e=>{SR.range=e.target.value;if(SR.range==='custom'&&!SR.to){SR.to=srIso(srDays(0));SR.from=srIso(srDays(29));}re();};
+ if(g('srFrom'))g('srFrom').onchange=e=>{SR.from=e.target.value;re();};
+ if(g('srTo'))g('srTo').onchange=e=>{SR.to=e.target.value;re();};
+ if(g('srCls'))g('srCls').onchange=e=>{SR.cls=e.target.value;re();};
+ if(g('srSubj'))g('srSubj').onchange=e=>{SR.subj=e.target.value;re();};
+ if(g('srLoad'))g('srLoad').onclick=async()=>{if(SR.busy)return;SR.busy=true;g('srLoad').textContent='Loading…';try{const rows=await cloudLoad();if(rows)dsCloud=rows;SR.msg=dsCloudMsg||'';}catch(e){SR.msg='Could not load scores.';}SR.busy=false;if(hubTab==='p')re();};
+ if(!(typeof dsCloud!=='undefined'&&dsCloud)&&!SR.tried&&CDB){SR.tried=true;try{const u=window.MWQ_AUTH&&window.MWQ_AUTH.currentUser;if(u&&!u.isAnonymous)g('srLoad').click();}catch(e){}}}
+
+// ---- 3) Teacher accounts: email + password sign-in, forgot password, and a teacher record the admin can turn off ----
+(function(){
+ if(window.MWQ_NOFB||typeof firebase==='undefined'||!window.MWQ_AUTH)return;
+ const auth=window.MWQ_AUTH,fs=()=>firebase.firestore();
+ const prov=u=>{try{return(u.providerData&&u.providerData[0]&&u.providerData[0].providerId)||'';}catch(e){return'';}};
+ const T={rec:undefined,busy:false};
+ window.MWQ_TEACHER_OFF=false;
+ async function syncTeacher(){const u=auth.currentUser;if(!u||u.isAnonymous||T.busy)return;if(prov(u)==='password'&&!u.emailVerified)return;T.busy=true;
+  try{const ref=fs().doc('teachers/'+u.uid),s=await ref.get(),today=todayKey();let school='';try{const a=await fs().doc('access/'+u.uid).get();if(a.exists)school=String(a.data().school||'').slice(0,80);}catch(e){}
+   const base={email:String(u.email||'').toLowerCase().slice(0,120),name:String(u.displayName||'').slice(0,80),prov:prov(u)==='password'?'email':'google',school,last:today};
+   if(!s.exists){await ref.set(Object.assign({first:today},base));T.rec=Object.assign({first:today},base);}
+   else{T.rec=s.data();window.MWQ_TEACHER_OFF=T.rec.off===true;if(T.rec.last!==today||T.rec.school!==school||T.rec.email!==base.email){await ref.update(base);Object.assign(T.rec,base);}}}
+  catch(e){console.warn('teacher record',e);}
+  T.busy=false;if(modalOpen&&document.querySelector('#modalBody .tabs'))openTeacher();}
+ window.MWQ_SYNC_TEACHER=syncTeacher;
+ auth.onAuthStateChanged(u=>{if(u&&!u.isAnonymous)syncTeacher();});
+ const msgBox=(t,c)=>{const m=document.getElementById('emMsg');if(m){m.innerHTML=t;m.style.color=c==='err'?'#ff8a8a':c==='ok'?'#7cf09a':'';}};
+ const errText=e=>{const c=(e&&e.code)||'';return{'auth/invalid-email':'That email address doesn\'t look right.','auth/missing-password':'Type your password.','auth/weak-password':'Use a password with at least 8 characters.','auth/email-already-in-use':'That email already has an account. Click <b>Sign in</b> instead, or <b>Forgot password?</b>','auth/invalid-credential':'Wrong email or password. Try again, or click <b>Forgot password?</b>','auth/wrong-password':'Wrong email or password. Try again, or click <b>Forgot password?</b>','auth/user-not-found':'No account uses that email yet. Click <b>Create account</b>.','auth/too-many-requests':'Too many tries. Wait a few minutes, or click <b>Forgot password?</b>','auth/operation-not-allowed':'Email sign-in isn\'t turned on yet. Please email schoolhiddentreasuregame@gmail.com.','auth/user-disabled':'This teacher account was turned off. Please email schoolhiddentreasuregame@gmail.com.'}[c]||('Sign-in did not finish ('+esc(c||(e&&e.message)||'error')+').');};
+ const emailHTML=()=>`<div class="item" id="emBox" style="display:block;border-color:#ffcf4a;margin-top:-4px"><b>📧 Or sign in with your email</b> <span class="mini">— works with any school email (Outlook, district email, Gmail)</span>
+  <div class="row wrap" style="gap:6px;margin-top:6px"><input type="email" id="emIn" placeholder="you@school.org" autocomplete="username" style="max-width:240px"><input type="password" id="pwIn" placeholder="Password" autocomplete="current-password" style="max-width:180px">
+  <button class="btn sm gold" id="emSign">Sign in</button><button class="btn sm" id="emNew">Create account</button><button class="btn sm" id="emForgot">Forgot password?</button></div><div class="mini" id="emMsg" style="min-height:18px"></div></div>`;
+ const verifyHTML=u=>`<div class="item" style="display:block;border-color:#ffcf4a"><b>📬 Check your email to finish setting up your teacher account</b><div class="mini">We sent a link to <b>${esc(u.email||'')}</b>. Click it, then click <b>I clicked the link</b>. (Check your spam folder too.) Class features unlock after this step.</div>
+  <div class="row wrap" style="gap:6px;margin-top:6px"><button class="btn sm gold" id="emDone">✔ I clicked the link</button><button class="btn sm" id="emResend">📨 Send the link again</button><button class="btn sm" id="emOut2">Use a different account</button></div><div class="mini" id="emMsg" style="min-height:18px"></div></div>`;
+ const offHTML=()=>`<div class="item" style="display:block;border-color:#ff8a8a"><b>⛔ This teacher account is turned off.</b><div class="mini">Class codes and reports won't load. If you think this is a mistake, email <b>schoolhiddentreasuregame@gmail.com</b>.</div></div>`;
+ const _ot=openTeacher;openTeacher=function(){_ot();const mb=document.getElementById('modalBody');if(!mb||!mb.querySelector('.tabs'))return;const u=auth.currentUser;
+  const gi=document.getElementById('fbIn');
+  if(gi&&(!u||u.isAnonymous)){const it=gi.closest('.item');if(it){const t=it.querySelector('.mini');if(t)t.innerHTML='Students never sign in. Teachers sign in once — with Google or with any school email — to create class codes and see their own students\' progress. Your school must have an Online Plan or School License.';it.insertAdjacentHTML('afterend',emailHTML());}
+   const val=()=>({e:(document.getElementById('emIn').value||'').trim(),p:document.getElementById('pwIn').value||''});
+   document.getElementById('emSign').onclick=async()=>{const{e,p}=val();if(!e||!p){msgBox('Type your email and password.','err');return;}msgBox('Signing in…');try{const c=await auth.signInWithEmailAndPassword(e,p);if(c.user&&!c.user.emailVerified){openTeacher();return;}location.reload();}catch(x){msgBox(errText(x),'err');}};
+   document.getElementById('emNew').onclick=async()=>{const{e,p}=val();if(!e){msgBox('Type your school email first.','err');return;}if(p.length<8){msgBox('Choose a password with at least 8 characters.','err');return;}msgBox('Creating your account…');
+    try{const c=await auth.createUserWithEmailAndPassword(e,p);try{await c.user.sendEmailVerification();}catch(x){}openTeacher();}catch(x){msgBox(errText(x),'err');}};
+   document.getElementById('emForgot').onclick=async()=>{const{e}=val();if(!e){msgBox('Type your email in the box first, then click <b>Forgot password?</b>','err');return;}
+    try{await auth.sendPasswordResetEmail(e);msgBox('📨 If <b>'+esc(e)+'</b> has a teacher account, a password reset link is on its way. Check your inbox (and spam).','ok');}catch(x){msgBox(x&&x.code==='auth/invalid-email'?errText(x):'📨 If <b>'+esc(e)+'</b> has a teacher account, a password reset link is on its way.','ok');}};
+   const pw=document.getElementById('pwIn');if(pw)pw.addEventListener('keydown',ev=>{if(ev.key==='Enter')document.getElementById('emSign').click();});}
+  else if(u&&!u.isAnonymous&&prov(u)==='password'&&!u.emailVerified){const it=mb.querySelector('#fbOut');const box=it&&it.closest('.item');if(box){box.insertAdjacentHTML('afterend',verifyHTML(u));
+    document.getElementById('emDone').onclick=async()=>{try{await u.reload();await u.getIdToken(true);}catch(e){}if(auth.currentUser&&auth.currentUser.emailVerified){msgBox('✔ Verified! Loading your classes…','ok');setTimeout(()=>location.reload(),600);}else msgBox('Not verified yet. Open the email and click the link first.','err');};
+    document.getElementById('emResend').onclick=async()=>{try{await u.sendEmailVerification();msgBox('📨 Sent again to '+esc(u.email||'')+'.','ok');}catch(x){msgBox(x&&x.code==='auth/too-many-requests'?'Please wait a minute before sending again.':'Could not send the email.','err');}};
+    document.getElementById('emOut2').onclick=async()=>{await auth.signOut();location.reload();};}}
+  else if(u&&!u.isAnonymous&&window.MWQ_TEACHER_OFF){const it=mb.querySelector('#fbOut');const box=it&&it.closest('.item');if(box)box.insertAdjacentHTML('afterend',offHTML());}
+ };
+})();
 
 renderTitle();show('title');requestAnimationFrame(render);
 
