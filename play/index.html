@@ -9254,6 +9254,78 @@ function bindSR(){const re=()=>openTeacher();
  };
 })();
 
+// ==================== V70: STANDARDS REPORT — SEE SEVERAL GRADE LEVELS AT ONCE (grade picker + grouped-by-grade columns) ====================
+SR.grades=[];SR.group=true;
+const SR_GORD=['1','2','3','4','5','6','7','78','8','EE5'];
+const srGOrd=g=>{const i=SR_GORD.indexOf(g);return i<0?99:i;};
+const srGLbl=g=>({'1':'1st grade','2':'2nd grade','3':'3rd grade','4':'4th grade','5':'5th grade','6':'6th grade','7':'7th grade','8':'8th grade','78':'7th / 8th grade','EE5':'OAAP Grade 5'}[g]||('Grade '+g));
+const SR_GCOL=['#4aa3ff','#c77dff','#ffb84a','#5be37d','#ff7a9a','#40d0d0','#e0d24a','#ff8a5b','#9aa8ff'];
+const srGCol=g=>SR_GCOL[srGOrd(g)%SR_GCOL.length];
+const srGOf=k=>{const m=/^[a-z]:([^|]+)\|/.exec(k);return m?m[1]:'?';};
+srBuild=function(){const[lo,hi]=srRange(),studs={},cols={},gradesSeen=new Set();let skipped=0,days=new Set();
+ const gOn=g=>!SR.grades.length||SR.grades.includes(g);
+ srRows().forEach(r=>{const dn=srNum(r.date);if(!dn||dn<lo||dn>hi)return;if(SR.cls!=='all'&&r.code!==SR.cls)return;
+  const sk=(r.student||r.hero||'?')+'|'+(r.code||'');const st=studs[sk]=studs[sk]||{name:r.student||r.hero||'?',hero:r.hero||'',code:r.code||'',by:{},byG:{},c:0,t:0,days:new Set()};
+  st.days.add(dn);days.add(dn);
+  let gt=r.gt;if(!gt){gt={};Object.entries(r.tp||{}).forEach(([t,v])=>{const ks=srTopicKeys(t);if(ks.length===1){const a=gt[ks[0]]=gt[ks[0]]||[0,0];a[0]+=v[0];a[1]+=v[1];}else skipped+=(v&&v[1])||0;});}
+  Object.entries(gt).forEach(([k,v])=>{if(!v||!v[1])return;const sj=srSubjOf(k),g=srGOf(k);if(SR.subj!=='all'&&sj!==SR.subj)return;gradesSeen.add(g);if(!gOn(g))return;
+   const codes=stdSplit(stdOf(k));if(!codes.length){skipped+=v[1];return;}
+   codes.forEach(code=>{const ck=g+'|'+sj+'|'+code;cols[ck]=cols[ck]||{code,sj,g,c:0,t:0,topics:new Set()};cols[ck].c+=v[0];cols[ck].t+=v[1];cols[ck].topics.add(k.split('|')[1]);
+    const b=st.by[ck]=st.by[ck]||[0,0];b[0]+=v[0];b[1]+=v[1];});
+   const bg=st.byG[g]=st.byG[g]||[0,0];bg[0]+=v[0];bg[1]+=v[1];st.c+=v[0];st.t+=v[1];});});
+ const order='shem';
+ const C=Object.entries(cols).sort((a,b)=>(SR.group?srGOrd(a[1].g)-srGOrd(b[1].g):0)||order.indexOf(a[1].sj)-order.indexOf(b[1].sj)||a[1].code.localeCompare(b[1].code,undefined,{numeric:true}));
+ const S=Object.values(studs).filter(s=>s.t>0).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+ const G=[...new Set(C.map(([ck,c])=>c.g))].sort((a,b)=>srGOrd(a)-srGOrd(b));
+ return{C,S,G,skipped,days:days.size,gradesSeen:[...gradesSeen].sort((a,b)=>srGOrd(a)-srGOrd(b))};};
+srTabHTML=function(){
+ const signed=(()=>{try{const u=window.MWQ_AUTH&&window.MWQ_AUTH.currentUser;return!!(u&&!u.isAnonymous);}catch(e){return false;}})();
+ const classes=[...new Set(srRows().map(r=>r.code).filter(Boolean))].sort();
+ const lbl=c=>{const x=(settings.classes||[]).find(k=>k.code===c);return x?x.label+' ('+c+')':c;};
+ const R=srBuild();
+ const gPick=R.gradesSeen.length>1||SR.grades.length?`<div class="row wrap" style="gap:6px;align-items:center;margin-top:6px"><b class="mini">Grade levels:</b>
+  <label class="radio sm"><input type="checkbox" id="srGAll" ${SR.grades.length?'':'checked'}> All</label>
+  ${R.gradesSeen.map(g=>`<label class="radio sm" style="border-color:${srGCol(g)}"><input type="checkbox" class="srG" value="${esc(g)}" ${SR.grades.includes(g)?'checked':''}> <span style="color:${srGCol(g)};font-weight:900">${esc(srGLbl(g))}</span></label>`).join('')}
+  <span class="mini" style="margin-left:6px">Columns:</span>
+  <label class="radio sm"><input type="radio" name="srGrp" value="1" ${SR.group?'checked':''}> Grouped by grade</label><label class="radio sm"><input type="radio" name="srGrp" value="0" ${SR.group?'':'checked'}> Mixed</label></div>`:'';
+ const head=`<p class="mini">Each student's percent correct on every Oklahoma standard they practiced, from the daily scores the game sends automatically. <b style="color:#46c46a">Green</b> 80%+ · <b style="color:#e0b02c">Yellow</b> 60–79% · <b style="color:#e5484d">Red</b> under 60%. The small number is how many questions were answered; faded cells have fewer than 3, so treat them as a first look.</p>
+ <div class="row wrap" style="gap:8px;align-items:flex-end">
+  <label class="radio sm">Dates <select id="srRange">${[['7','Last 7 days'],['14','Last 2 weeks'],['30','Last 30 days'],['63','Last 9 weeks'],['all','All time'],['custom','Pick dates…']].map(([v,l])=>`<option value="${v}" ${SR.range===v?'selected':''}>${l}</option>`).join('')}</select></label>
+  ${SR.range==='custom'?`<label class="radio sm">From <input type="date" id="srFrom" value="${esc(SR.from)}" style="max-width:160px"></label><label class="radio sm">To <input type="date" id="srTo" value="${esc(SR.to)}" style="max-width:160px"></label>`:''}
+  <label class="radio sm">Class <select id="srCls"><option value="all">All classes</option>${classes.map(c=>`<option value="${esc(c)}" ${SR.cls===c?'selected':''}>${esc(lbl(c))}</option>`).join('')}</select></label>
+  <label class="radio sm">Subject <select id="srSubj">${[['all','All subjects'],['s','🔬 Science'],['h','📜 Social Studies'],['e','📝 ELA'],['m','➗ Math']].map(([v,l])=>`<option value="${v}" ${SR.subj===v?'selected':''}>${l}</option>`).join('')}</select></label>
+  <button class="btn sm gold" id="srLoad">${SR.busy?'Loading…':(typeof dsCloud!=='undefined'&&dsCloud?'🔄 Refresh':'☁️ Load scores')}</button>
+ </div>${gPick}<div class="mini" id="srMsg">${esc(SR.msg)}</div>`;
+ if(!R.S.length){const why=!(typeof dsCloud!=='undefined'&&dsCloud)?(signed?'Click <b>☁️ Load scores</b> to pull in your students\' daily scores.':'Sign in at the top of the Teacher Hub, then click <b>☁️ Load scores</b>.'):'No answers in these dates for this class, subject and grade. Try a wider date range or pick more grade levels.';
+  return head+`<div class="item" style="display:block"><p>${why}</p><p class="mini">Students send scores automatically once they join one of your class codes (🏫 Class Codes & Daily Scores tab).</p></div>`;}
+ const grp=SR.group&&R.G.length>1;
+ // column list: in grouped mode each grade starts with a grade-average column
+ const L=[];R.C.forEach(([ck,c],i)=>{if(grp&&(i===0||R.C[i-1][1].g!==c.g))L.push({avg:c.g});L.push({ck,c});});
+ const edge=(x,i)=>grp&&(i===0||(L[i-1].avg===undefined&&x.avg!==undefined))?`border-left:3px solid ${srGCol(x.avg)};`:'';
+ const gHead=grp?`<tr><th style="position:sticky;left:0;z-index:3;top:0"></th><th style="top:0"></th><th style="top:0"></th>${R.G.map(g=>{const n=L.filter(x=>(x.avg===g)||(x.c&&x.c.g===g)).length;return`<th colspan="${n}" style="top:0;text-align:center;background:${srGCol(g)}33;color:${srGCol(g)};border-left:3px solid ${srGCol(g)};font-size:15px">${esc(srGLbl(g))}</th>`;}).join('')}</tr>`:'';
+ const top2=grp?'top:31px;':'';
+ const colsHTML=L.map((x,i)=>x.avg!==undefined?`<th style="${top2}${edge(x,i)}text-align:center;color:${srGCol(x.avg)}">Avg</th>`:`<th title="${esc(x.c.code+' — '+(stdInfo(x.c.code)||'')+' (topics: '+[...x.c.topics].join(', ')+')')}" style="${top2}text-align:center">${SR_SUBJ[x.c.sj]?SR_SUBJ[x.c.sj].split(' ')[0]:''}<br>${esc(x.c.code)}${grp?'':`<div class="mini" style="color:${srGCol(x.c.g)}">${esc(srGLbl(x.c.g).replace(' grade',''))}</div>`}</th>`).join('');
+ const avgCell=(v,g,who)=>{if(!v||!v[1])return`<td class="mini" style="text-align:center;color:#6d6380;border-left:3px solid ${srGCol(g)}">·</td>`;const p=Math.round(v[0]/v[1]*100);return`<td title="${esc(who+': '+srGLbl(g)+' — '+v[0]+' of '+v[1]+' correct')}" style="text-align:center;border-left:3px solid ${srGCol(g)};color:${pctCol(p)};font-weight:900">${p}%<div class="mini">${v[1]}</div></td>`;};
+ const body=R.S.map(s=>{const p=s.t?Math.round(s.c/s.t*100):0;
+  const weak=R.C.filter(([ck])=>{const v=s.by[ck];return v&&v[1]>=3&&v[0]/v[1]<.6;}).sort((a,b)=>{const va=s.by[a[0]],vb=s.by[b[0]];return va[0]/va[1]-vb[0]/vb[1];}).slice(0,4).map(([ck,c])=>c.code);
+  return`<tr><td style="position:sticky;left:0;background:#1b1724;z-index:1"><b>${esc(s.name)}</b>${s.hero&&s.hero!==s.name?`<div class="mini">${esc(s.hero)}</div>`:''}<div class="mini">${s.code?esc(s.code)+' · ':''}${s.days.size} day${s.days.size===1?'':'s'}</div></td>
+   <td style="text-align:center;color:${pctCol(p)};font-weight:900">${p}%<div class="mini">${s.t} answered</div></td>
+   <td class="mini" style="white-space:normal;min-width:120px">${weak.length?weak.map(esc).join(', '):'<span style="color:#46c46a">—</span>'}</td>
+   ${L.map(x=>x.avg!==undefined?avgCell(s.byG[x.avg],x.avg,s.name):srCell(s.by[x.ck],`${s.name}: ${x.c.code} (${srGLbl(x.c.g)}) — ${s.by[x.ck]?s.by[x.ck][0]+' of '+s.by[x.ck][1]+' correct':'not practiced'}${stdInfo(x.c.code)?'. '+stdInfo(x.c.code):''}`)).join('')}</tr>`;}).join('');
+ const tc=R.S.reduce((a,s)=>a+s.c,0),tt=R.S.reduce((a,s)=>a+s.t,0),tp=tt?Math.round(tc/tt*100):0;
+ const clsG=g=>{let c=0,t=0;R.S.forEach(s=>{const v=s.byG[g];if(v){c+=v[0];t+=v[1];}});return[c,t];};
+ const foot=`<tr style="border-top:2px solid var(--gold)"><td style="position:sticky;left:0;background:#241f30;z-index:1"><b>Whole class</b><div class="mini">${R.S.length} student${R.S.length===1?'':'s'}</div></td><td style="text-align:center;color:${pctCol(tp)};font-weight:900">${tp}%<div class="mini">${tt} answered</div></td>
+  <td class="mini" style="white-space:normal">${R.C.filter(([ck,c])=>c.t>=5&&c.c/c.t<.6).sort((a,b)=>a[1].c/a[1].t-b[1].c/b[1].t).slice(0,4).map(([ck,c])=>esc(c.code)).join(', ')||'—'}</td>
+  ${L.map(x=>x.avg!==undefined?avgCell(clsG(x.avg),x.avg,'Whole class'):srCell([x.c.c,x.c.t],`Whole class: ${x.c.code} — ${x.c.c} of ${x.c.t} correct`)).join('')}</tr>`;
+ const lo=srRange();
+ return head+`<p class="mini">${R.S.length} student${R.S.length===1?'':'s'} · ${R.C.length} standard${R.C.length===1?'':'s'}${R.G.length>1?' across '+R.G.length+' grade levels':''} · ${R.days} school day${R.days===1?'':'s'} of scores${SR.range!=='all'?` · ${esc(fmtYmd(lo[0]))}${lo[1]<99999999?' – '+esc(fmtYmd(lo[1])):' – today'}`:''}. Hover over a cell or code to see the details.</p>
+ <div class="tscroll" style="max-height:520px"><table class="rtab">${gHead}<tr><th style="position:sticky;left:0;z-index:3;${top2}">Student</th><th style="${top2}">Overall</th><th style="${top2}">Needs work<br><span class="mini">(under 60%)</span></th>${colsHTML}</tr>${body}${foot}</table></div>
+ ${R.skipped?`<p class="mini">${R.skipped} older answer${R.skipped===1?'':'s'} couldn't be matched to one exact standard, because scores sent before the v69 update only saved the topic name. New scores always match.</p>`:''}`;};
+{const _b=bindSR;bindSR=function(){_b();const re=()=>openTeacher();
+ const all=document.getElementById('srGAll');if(all)all.onchange=()=>{SR.grades=[];re();};
+ document.querySelectorAll('.srG').forEach(c=>c.onchange=()=>{SR.grades=[...document.querySelectorAll('.srG:checked')].map(x=>x.value);re();});
+ document.querySelectorAll('input[name=srGrp]').forEach(r=>r.onchange=()=>{SR.group=r.value==='1';re();});};}
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
