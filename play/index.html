@@ -5965,7 +5965,7 @@ const teachOpen=()=>Date.now()<TEACH_UNTIL;
  <input type="password" id="tpIn" autocomplete="off" style="max-width:280px"><div id="tpErr" class="mini" style="min-height:18px;color:#ff8a8a;font-weight:800"></div>
  <div class="row"><button class="btn gold" id="tpGo">🔓 Open</button><button class="btn" id="tpX">Cancel</button></div><p class="mini">The hub stays unlocked for ${TEACH_MIN} minutes, or until you press 🔒 Lock or reload the page.</p>`);
  const go=()=>{if(Date.now()<TEACH_WAIT){$('#tpErr').textContent=`Too many tries. Wait ${Math.ceil((TEACH_WAIT-Date.now())/1000)} seconds.`;return;}
-  if(teachHash($('#tpIn').value.trim())===TEACH_HASH){TEACH_FAILS=0;TEACH_UNTIL=Date.now()+TEACH_MIN*60000;openTeacher.ok=true;_otP();addLockBtn();}
+  if(teachOk($('#tpIn').value.trim())){TEACH_FAILS=0;TEACH_UNTIL=Date.now()+TEACH_MIN*60000;openTeacher.ok=true;openTeacher();}
   else{TEACH_FAILS++;$('#tpIn').value='';if(TEACH_FAILS>=3){TEACH_WAIT=Date.now()+30000;TEACH_FAILS=0;$('#tpErr').textContent='Wrong password. Too many tries — wait 30 seconds.';}else $('#tpErr').textContent='Wrong password. (Capital letters matter.)';snd('wrong');}};
  $('#tpGo').onclick=go;$('#tpIn').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go();}};$('#tpX').onclick=closeModal;setTimeout(()=>{const i=$('#tpIn');if(i)i.focus();},50);};}
 // a Lock button inside the hub
@@ -9410,6 +9410,21 @@ const HUB_LAST={};
  nav.querySelectorAll('[data-hs]').forEach(b=>b.onclick=()=>{const t=btns[b.dataset.hs];if(t)t.onclick();});
  nav.querySelectorAll('[data-hg]').forEach(b=>b.onclick=()=>{const g=groups.find(x=>x.id===b.dataset.hg);if(!g||g===cur)return;const k=HUB_LAST[g.id]&&g.tabs.some(t=>t[0]===HUB_LAST[g.id])?HUB_LAST[g.id]:g.tabs[0][0];const t=btns[k];if(t)t.onclick();});
 }catch(e){console.warn('hub nav',e);}};}
+
+// ==================== V73: TEACHER HUB PASSWORD BY SCHOOL ====================
+// Marble City School's devices (school code MARB-HGB8-CH2Q) keep Mr. Walker's own Teacher Hub password.
+// Every other school's devices use the default password (stored only as a scrambled fingerprint).
+const HUB_OWN_CODES=['MARB-HGB8-CH2Q'],HUB_DEFAULT_HASH='1dwd7t300my';
+let HUB_SC=(()=>{try{return localStorage.getItem('htq_sc')||null;}catch(e){return null;}})();
+(function(){
+ if(window.MWQ_NOFB||typeof firebase==='undefined'||!window.MWQ_AUTH)return;
+ const look=async()=>{try{const u=window.MWQ_AUTH.currentUser;if(!u)return;const a=await firebase.firestore().doc('access/'+u.uid).get();
+  if(a.exists&&a.data().code){HUB_SC=String(a.data().code).toUpperCase();try{localStorage.setItem('htq_sc',HUB_SC);}catch(e){}}}catch(e){}};
+ window.MWQ_AUTH.onAuthStateChanged(u=>{if(u)look();});
+})();
+function teachOk(pw){const h=teachHash(pw);
+ if(window.MWQ_NOFB||typeof firebase==='undefined')return h===TEACH_HASH;        // downloaded/demo copies: unchanged
+ return HUB_SC&&HUB_OWN_CODES.includes(HUB_SC)?h===TEACH_HASH:h===HUB_DEFAULT_HASH;}
 
 renderTitle();show('title');requestAnimationFrame(render);
 
