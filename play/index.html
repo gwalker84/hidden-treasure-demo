@@ -9376,6 +9376,41 @@ srTabHTML=function(){
   const o=document.getElementById('taOut');if(o)o.onclick=async()=>{await auth.signOut();location.reload();};}
 })();
 
+// ==================== V72: STREAMLINED TEACHER HUB — 6 sections with a short second row instead of 19 tabs ====================
+const HUB_GROUPS=[
+ {id:'home',icon:'🏠',name:'Home',tabs:[['h','Class Dashboard']]},
+ {id:'cls',icon:'🏫',name:'Classes',tabs:[['d','Class Codes & Scores'],['n','Who’s Online'],['k','Watch'],['l','Live Class'],['c','Classroom Mode']]},
+ {id:'rep',icon:'📊',name:'Reports',tabs:[['p','Standards Report'],['r','Progress Report'],['s','Standards'],['i','Inventories']]},
+ {id:'teach',icon:'📝',name:'Assign',tabs:[['a','Assign & Test'],['b','Review Rush'],['q','Question Sets'],['x','Student Questions'],['v','Vocab']]},
+ {id:'fun',icon:'🐲',name:'Rewards',tabs:[['w','World Boss & Leaderboard'],['g','Rewards & Events']]},
+ {id:'set',icon:'⚙️',name:'Settings',tabs:[['o','Options'],['u','Student Supports']]}];
+const HUB_LAST={};
+(function(){
+ const st=document.createElement('style');
+ st.textContent=`.hubnav{margin:4px 0 12px}.hubnav .grp{display:flex;gap:6px;flex-wrap:wrap}.hubnav .g{background:#1a1528;border:2px solid #4a3d6a;color:var(--text);border-radius:10px;padding:7px 13px;font-weight:900;cursor:pointer;font-family:inherit;font-size:14px}
+ .hubnav .g.on{background:#3a2f12;border-color:var(--gold);color:var(--gold)}.hubnav .sub{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;padding:6px;background:#141020;border-radius:10px;border:1px solid #3a3150}
+ .hubnav .s{background:none;border:0;border-bottom:3px solid transparent;color:#cfc6e0;padding:6px 10px;font-weight:800;cursor:pointer;font-family:inherit;font-size:14px;border-radius:6px 6px 0 0}.hubnav .s:hover{color:#fff;background:#221b33}
+ .hubnav .s.on{color:var(--gold);border-bottom-color:var(--gold)}
+ @media(max-width:620px){.hubnav .g{padding:7px 9px;font-size:13px}.hubnav .g .gn{display:none}.hubnav .s{font-size:13px;padding:6px 8px}}`;
+ document.head.appendChild(st);
+})();
+{const _ot=openTeacher;openTeacher=function(){_ot();try{
+ const mb=document.getElementById('modalBody');const old=mb&&mb.querySelector('.tabs');if(mb&&mb.querySelector('.hubnav'))return;if(!old||!old.querySelector('[data-tab]'))return;
+ const btns={};old.querySelectorAll('[data-tab]').forEach(b=>btns[b.dataset.tab]=b);
+ // any tab not in a section (added later) goes into a "More" section, so nothing is ever lost
+ const known=new Set(HUB_GROUPS.flatMap(g=>g.tabs.map(t=>t[0])));
+ const extra=Object.keys(btns).filter(k=>!known.has(k)).map(k=>[k,btns[k].textContent.trim().replace(/^\S+\s/,'')]);
+ const groups=HUB_GROUPS.map(g=>Object.assign({},g,{tabs:g.tabs.filter(t=>btns[t[0]])})).filter(g=>g.tabs.length);
+ if(extra.length)groups.push({id:'more',icon:'➕',name:'More',tabs:extra});
+ const cur=groups.find(g=>g.tabs.some(t=>t[0]===hubTab))||groups[0];HUB_LAST[cur.id]=hubTab;
+ const nav=document.createElement('div');nav.className='hubnav';
+ nav.innerHTML=`<div class="grp" role="tablist" aria-label="Teacher Hub sections">${groups.map(g=>`<button class="g${g===cur?' on':''}" data-hg="${g.id}" title="${esc(g.name)}">${g.icon} <span class="gn">${esc(g.name)}</span></button>`).join('')}</div>
+  ${cur.tabs.length>1?`<div class="sub" role="tablist" aria-label="${esc(cur.name)}">${cur.tabs.map(([k,l])=>`<button class="s${k===hubTab?' on':''}" data-hs="${k}">${esc(l)}</button>`).join('')}</div>`:''}`;
+ old.style.display='none';old.setAttribute('aria-hidden','true');old.parentNode.insertBefore(nav,old);
+ nav.querySelectorAll('[data-hs]').forEach(b=>b.onclick=()=>{const t=btns[b.dataset.hs];if(t)t.onclick();});
+ nav.querySelectorAll('[data-hg]').forEach(b=>b.onclick=()=>{const g=groups.find(x=>x.id===b.dataset.hg);if(!g||g===cur)return;const k=HUB_LAST[g.id]&&g.tabs.some(t=>t[0]===HUB_LAST[g.id])?HUB_LAST[g.id]:g.tabs[0][0];const t=btns[k];if(t)t.onclick();});
+}catch(e){console.warn('hub nav',e);}};}
+
 renderTitle();show('title');requestAnimationFrame(render);
 
 
