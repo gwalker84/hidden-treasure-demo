@@ -9439,6 +9439,40 @@ const HTQ_HIDE=['k','l','n','x','w'];
 {const _rcH=renderCamp;renderCamp=function(){_rcH();['#bClass','#bWriteQ'].forEach(s=>{const e=$(s);if(e)e.remove();});};}
 function noCloudHTML(what){return`<div class="item" style="display:block"><p><b>${what} isn't part of the Classroom Edition.</b></p><p class="mini">This edition keeps all student data on each computer. Use Score Codes and Save Codes to move information.</p></div>`;}
 
+// ==================== V76: SCIENCE GRADES 5th · 6th · 7th · 8th ====================
+// 7th and 8th grade science can now be picked separately (or together, as before).
+// Each 7th/8th topic belongs to the grade of its Oklahoma standard (📏 Standards tab), so a changed standard moves the topic too.
+const SG_ORD={'5':'5th','6':'6th','7':'7th','8':'8th'};
+function sgTopicGrades(t){const code=String((typeof stdOf==='function'&&stdOf('s:78|'+t))||'');const g=[];if(/(^|[^\d.])7\./.test(code))g.push('7');if(/(^|[^\d.])8\./.test(code))g.push('8');return g.length?g:['7','8'];}
+function sgInGrade(q,g){if(!q||q.subj||q.low)return true;if(g==='5'||g==='6')return q.g===g;if(q.g!=='78')return q.g==='c'||!/^(5|6|78)$/.test(q.g||'');return sgTopicGrades(q.t).includes(g);}
+// which science grade is in play: the student's own pick, else the teacher's
+function sgEffective(h){h=h||(PARTY?PARTY[0]:hero);const own=h&&h.sGrade;if(/^[5-8]$/.test(own||''))return own;if(settings.grade==='78'&&/^[78]$/.test(settings.sciSub||''))return settings.sciSub;return null;}
+{const _bpG=buildPool0;buildPool0=function(){try{if(typeof subjOf==='function'&&subjOf()!=='sci')return _bpG.apply(this,arguments);if(typeof lowGradeOf==='function'&&lowGradeOf('sci'))return _bpG.apply(this,arguments);
+  const g=sgEffective();if(!g)return _bpG.apply(this,arguments);const want=g==='7'||g==='8'?'78':g,old=settings.grade;let p;
+  try{settings.grade=want;p=_bpG.apply(this,arguments);}finally{settings.grade=old;}
+  const f=p.filter(q=>sgInGrade(q,g));return f.filter(q=>q.g!=='c').length?f:p;}catch(e){return _bpG.apply(this,arguments);}};}
+// combat: show 7th or 8th instead of 7th/8th
+{const _nqG=nextQuestion;nextQuestion=function(pre){_nqG.apply(this,arguments);try{if(Cb&&Cb.q&&Cb.q.g==='78'&&!Cb.q.subj){const el=$('#cTopic');const tg=sgTopicGrades(Cb.q.t);if(el&&tg.length===1)el.textContent=el.textContent.replace(' · 7th/8th',' · '+SG_ORD[tg[0]]);}}catch(e){}};}
+// Teacher Hub: split the "7th / 8th grade" choice into 7th, 8th, or both
+function sgCount(g){return QB.filter(q=>sgInGrade(q,g)&&(g==='5'||g==='6'?true:q.g==='78')).length;}
+function sgTeacherRadios(){const r78=document.querySelector('#modalBody input[name=grade][value="78"]:not([data-sub])');if(!r78||r78.dataset.sgDone)return;r78.dataset.sgDone='1';
+ const lab=r78.closest('label');if(!lab)return;const on=settings.grade==='78',sub=settings.sciSub||'';
+ const cls=lab.className||'radio',mk=(s,t)=>`<label class="${cls}"><input type="radio" name="grade" value="78" data-sub="${s}" ${on&&sub===s?'checked':''}> ${t}</label>`;
+ lab.insertAdjacentHTML('beforebegin',mk('7','7th')+mk('8','8th'));
+ r78.checked=on&&!/^[78]$/.test(sub);const sp=lab.querySelector('.mini');[...lab.childNodes].forEach(n=>{if(n.nodeType===3&&/7th/.test(n.textContent))n.textContent=n.textContent.replace(/7th\s*\/\s*8th( grade)?/,'7th & 8th');});
+ document.querySelectorAll('#modalBody input[name=grade]').forEach(r=>r.addEventListener('change',()=>{if(!r.checked)return;settings.sciSub=r.dataset.sub||'';try{store.set(SET_KEY,settings);}catch(e){}deck=[];}));}
+{const _otG=openTeacher;openTeacher=function(){_otG.apply(this,arguments);try{sgTeacherRadios();}catch(e){}};}
+// student subject picker: 5th, 6th, 7th, 8th next to 1st–4th
+{const _osG=openSubject;openSubject=function(){_osG.apply(this,arguments);try{if(subjOf()!=='sci')return;const box=document.getElementById('sgBox');if(!box)return;const row=box.querySelector('.row');if(!row||row.dataset.sgDone)return;row.dataset.sgDone='1';
+  const sg=(hero&&hero.sGrade)||'t';
+  row.insertAdjacentHTML('beforeend',['5','6','7','8'].map(g=>`<label class="radio"><input type="radio" name="sgr" value="${g}" ${sg===g?'checked':''}> ${SG_ORD[g]} grade <span class="mini">(${sgCount(g)})</span></label>`).join(''));
+  const t=row.querySelector('input[value="t"]');if(t&&settings.grade==='78'&&/^[78]$/.test(settings.sciSub||'')){const l=t.closest('label');if(l)[...l.childNodes].forEach(n=>{if(n.nodeType===3&&/7th\/8th/.test(n.textContent))n.textContent=n.textContent.replace('7th/8th',SG_ORD[settings.sciSub]);});}
+  row.querySelectorAll('input[name=sgr]').forEach(r=>{if(/^[5-8]$/.test(r.value))r.onchange=()=>{hero.sGrade=r.value;deck=[];saveHero();};});
+  box.insertAdjacentHTML('beforeend','<p class="mini">Pick your science grade, or leave it on your teacher’s setting.</p>');
+  document.querySelectorAll('#modalBody p.mini').forEach(p=>{if(p.textContent.includes('Grades 5–8 science units are set by your teacher'))p.textContent='🔬 Pick any science grade from 1st to 8th, or keep your teacher’s setting.';});}catch(e){}};}
+// camp button shows the science grade
+{const _rcG=renderCamp;renderCamp=function(){_rcG.apply(this,arguments);try{if(!hero||subjOf()!=='sci')return;const g=sgEffective(),b=$('#bSubj');if(b&&g&&!/grade\)/.test(b.textContent)&&SUBJ.sci)b.textContent=`${SUBJ.sci.i} Subject: ${SUBJ.sci.n} (${SG_ORD[g]} grade)`;}catch(e){}};}
+
 // ===================== FREE DEMO LIMITS =====================
 const DEMO_D=5,DEMO_LV=10,DEMO_RAR=1;
 const DEMO_MSG='<p class="mini">The full version of <b>Hidden Treasure Quest</b> has 20 dungeons and bosses, Rare, Epic and Legendary gear, levels past '+DEMO_LV+', the Endless Tower, Raids, and New Game+.</p>';
